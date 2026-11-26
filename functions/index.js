@@ -224,7 +224,7 @@ export async function onRequest(context) {
   const allLinkActiveMarker = allLinkActive ? 'nav-item-active' : '';
   const horizontalAllLink = `
     <div class="menu-item-wrapper relative inline-block text-left">
-      <a href="?catalog=all" class="nav-btn ${allLinkClass}${allLinkActiveMarker}">全部</a>
+      <a href="?catalog=all" class="nav-btn ${allLinkClass} ${allLinkActiveMarker}">全部</a>
     </div>`;
   const horizontalCatalogMarkup = horizontalAllLink + renderHorizontalMenu(rootCategories, currentCatalogName);
   const catalogLinkMarkup = renderVerticalMenu(rootCategories, currentCatalogName, isCustomWallpaper);
@@ -253,7 +253,10 @@ export async function onRequest(context) {
   };
   const mobileCardStyleClass = getCardStyleGridClass(S.mobile_layout_card_style, 'mobile');
   const desktopCardStyleClass = getCardStyleGridClass(S.layout_card_style, 'desktop');
-  let gridClass = `grid w-full ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)}${mobileCardStyleClass} ${desktopCardStyleClass} gap-2.5 sm:gap-3 justify-items-stretch`;  // === 12. 计算文本和统计信息 === const headingPlainText = currentCatalogName ? `${currentCatalogName} · ${sites.length} 个书签` : `全部收藏 · ${sites.length} 个书签`;
+  let gridClass = `grid w-full ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)} ${mobileCardStyleClass} ${desktopCardStyleClass} gap-2.5 sm:gap-3 justify-items-stretch`;
+
+  // === 12. 计算文本和统计信息 ===
+  const headingPlainText = currentCatalogName ? `${currentCatalogName} · ${sites.length} 个书签` : `全部收藏 · ${sites.length} 个书签`;
   const headingText = escapeHTML(headingPlainText);
   const headingDefaultAttr = escapeHTML(headingPlainText);
   const headingActiveAttr = catalogExists ? escapeHTML(currentCatalogName) : '';
@@ -305,8 +308,9 @@ export async function onRequest(context) {
 
   const horizontalCategoryNavHtml = `
       <div class="${horizontalCategoryNavShellClass}">
-        <div id="horizontalCategoryNav" class="flex ${horizontalCategoryNavWrapClass}${horizontalCategoryNavJustifyClass} items-center gap-3 ${horizontalCategoryNavOverflowClass}${horizontalCategoryNavFlowClass} transition-all duration-300">
-          ${horizontalCatalogMarkup}${horizontalMoreHtml}
+        <div id="horizontalCategoryNav" class="flex ${horizontalCategoryNavWrapClass} ${horizontalCategoryNavJustifyClass} items-center gap-3 ${horizontalCategoryNavOverflowClass} ${horizontalCategoryNavFlowClass} transition-all duration-300">
+          ${horizontalCatalogMarkup}
+          ${horizontalMoreHtml}
         </div>
       </div>`;
 
@@ -325,7 +329,8 @@ export async function onRequest(context) {
   const horizontalHeaderContent = `
     <div class="max-w-5xl mx-auto text-center relative z-10 ${themeClass}">
       ${categoryPosition === 'top' ? `<div class="category-nav-top-wrap">${horizontalCategoryNavHtml}</div>` : ''}
-      <div class="home-title-block max-w-4xl mx-auto mb-8">${horizontalTitleHtml}${horizontalSubtitleHtml}</div>${categoryPosition === 'above_search' ? `<div class="mb-6">${horizontalCategoryNavHtml}</div>` : ''}
+      <div class="home-title-block max-w-4xl mx-auto mb-8">${horizontalTitleHtml}${horizontalSubtitleHtml}</div>
+      ${categoryPosition === 'above_search' ? `<div class="mb-6">${horizontalCategoryNavHtml}</div>` : ''}
       <div class="home-search-shell relative max-w-xl mx-auto ${categoryPosition === 'below_search' ? 'mb-6' : ''}">
         ${searchEngineOptions}
         <div class="home-search-field relative">
@@ -395,7 +400,7 @@ export async function onRequest(context) {
   let bgLayerHtml = '';
   if (safeWallpaperUrl) {
     const blurStyle = S.layout_enable_bg_blur ? `filter: blur(${S.layout_bg_blur_intensity}px); transform: scale(1.02);` : '';
-    bgLayerHtml = `<div id="fixed-background" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -9999; pointer-events: none; overflow: hidden;"><img src="${safeWallpaperUrl}" alt="" fetchpriority="high" style="width: 100\%; height: 100\%; object-fit: cover; ${blurStyle}" /></div>`;
+    bgLayerHtml = `<div id="fixed-background" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -9999; pointer-events: none; overflow: hidden;"><img src="${safeWallpaperUrl}" alt="" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover; ${blurStyle}" /></div>`;
   } else {
     bgLayerHtml = `<div id="fixed-background" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -9999; pointer-events: none; background-color: ${defaultBgColor};"></div>`;
   }
@@ -404,7 +409,6 @@ export async function onRequest(context) {
     headInjections += `<link rel="preload" as="image" href="${safeWallpaperUrl}">\n`;
   }
 
-  // 去掉外层大格子 + 扁平方格高透明小格 + 窄两边留白 + 侧边栏缩放/自由拖放样式
   headInjections += `<style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     #app-scroll { width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
@@ -420,7 +424,6 @@ export async function onRequest(context) {
       padding-right: 10px !important;
     }
 
-    /* 彻底去掉包裹书签网格的大格子 */
     section:has(#sitesGrid) > div {
       width: 100% !important;
       max-width: 100% !important;
@@ -434,7 +437,6 @@ export async function onRequest(context) {
       padding: 4px 0 !important;
     }
 
-    /* 侧边栏菜单内的标签缩放与自由拖放工具栏 */
     .iori-sidebar-tools {
       margin-top: 1.5rem;
       padding-top: 1rem;
@@ -462,8 +464,493 @@ export async function onRequest(context) {
       font-weight: 600;
     }
 
-    /* 单个书签小格：扁平化方格 + 高透明度 */
     #sitesGrid .site-card,
     #sitesGrid > a,
     #sitesGrid > div {
-      background-color: rgba(255, 255
+      background-color: rgba(255, 255, 255, 0.14) !important;
+      border: 1px solid rgba(255, 255, 255, 0.22) !important;
+      border-radius: 6px !important;
+      box-shadow: none !important;
+      backdrop-filter: blur(4px) !important;
+      -webkit-backdrop-filter: blur(4px) !important;
+      transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.12s ease !important;
+    }
+    html.dark #sitesGrid .site-card,
+    html.dark #sitesGrid > a,
+    html.dark #sitesGrid > div {
+      background-color: rgba(17, 24, 39, 0.18) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    #sitesGrid .site-card:hover,
+    #sitesGrid > a:hover,
+    #sitesGrid > div:hover {
+      background-color: rgba(255, 255, 255, 0.28) !important;
+      border-color: rgba(255, 255, 255, 0.42) !important;
+      box-shadow: none !important;
+    }
+    html.dark #sitesGrid .site-card:hover,
+    html.dark #sitesGrid > a:hover,
+    html.dark #sitesGrid > div:hover {
+      background-color: rgba(31, 41, 55, 0.34) !important;
+      border-color: rgba(255, 255, 255, 0.22) !important;
+    }
+
+    body.iori-drag-mode #sitesGrid > * {
+      cursor: grab !important;
+      outline: 1px dashed rgba(255, 255, 255, 0.45);
+    }
+    body.iori-drag-mode #sitesGrid > *:active {
+      cursor: grabbing !important;
+    }
+    #sitesGrid > *.iori-dragging {
+      opacity: 0.45 !important;
+      transform: scale(0.96) !important;
+    }
+    #sitesGrid > *.iori-drag-over {
+      outline: 2px solid rgba(96, 165, 250, 0.95) !important;
+      background-color: rgba(59, 130, 246, 0.22) !important;
+    }
+
+    @media (max-width: 767px) {
+      #sitesGrid {
+        display: grid !important;
+        width: 100% !important;
+        grid-template-columns: repeat(auto-fill, minmax(calc(72px * var(--iori-card-scale, 1)), 1fr)) !important;
+        gap: 8px 6px !important;
+        justify-items: center !important;
+        align-items: start !important;
+      }
+      #sitesGrid > * {
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        padding: calc(6px * var(--iori-card-scale, 1)) 2px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+      }
+      #sitesGrid > * img,
+      #sitesGrid > * svg {
+        width: calc(36px * var(--iori-card-scale, 1)) !important;
+        height: calc(36px * var(--iori-card-scale, 1)) !important;
+      }
+      #sitesGrid .site-title {
+        font-size: calc(11px * var(--iori-card-scale, 1)) !important;
+        line-height: 1.2 !important;
+        margin-top: 4px !important;
+        max-width: 100% !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      #sitesGrid p {
+        display: none !important;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .home-stats-row,
+      section:has(#sitesGrid) {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+      }
+      #sitesGrid {
+        display: grid !important;
+        width: 100% !important;
+        grid-template-columns: repeat(auto-fill, minmax(calc(105px * var(--iori-card-scale, 1)), 1fr)) !important;
+        gap: 8px !important;
+        justify-items: stretch !important;
+      }
+      #sitesGrid > * {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        padding: calc(8px * var(--iori-card-scale, 1)) calc(6px * var(--iori-card-scale, 1)) !important;
+      }
+      #sitesGrid > * img,
+      #sitesGrid > * svg {
+        width: calc(32px * var(--iori-card-scale, 1)) !important;
+        height: calc(32px * var(--iori-card-scale, 1)) !important;
+      }
+      #sitesGrid .site-title {
+        font-size: calc(13px * var(--iori-card-scale, 1)) !important;
+      }
+    }
+  </style>`;
+
+  const cardRadius = normalizeCssPixelValue(S.layout_card_border_radius, 6);
+  const mobileCardRadius = normalizeCssPixelValue(S.mobile_layout_card_border_radius, cardRadius);
+  const frostedBlur = normalizeCssPixelValue(S.layout_frosted_glass_intensity, 6);
+  const mobileFrostedBlur = normalizeCssPixelValue(S.mobile_layout_frosted_glass_intensity, frostedBlur);
+  headInjections += `<style>:root { --card-padding: 0.5rem; --card-radius: ${cardRadius}px; --frosted-glass-blur: ${frostedBlur}px; --iori-card-scale: 1; }@media (max-width: 767px) { :root { --card-radius: ${mobileCardRadius}px; --frosted-glass-blur: ${mobileFrostedBlur}px; } }</style>`;
+
+  const usedFonts = new Set();
+  if (!S.layout_hide_title && S.home_title_font) usedFonts.add(S.home_title_font);
+  if (!S.layout_hide_subtitle && S.home_subtitle_font) usedFonts.add(S.home_subtitle_font);
+  if (!S.home_hide_stats && S.home_stats_font) usedFonts.add(S.home_stats_font);
+  if (!S.home_hide_hitokoto && S.home_hitokoto_font) usedFonts.add(S.home_hitokoto_font);
+  if (S.card_title_font) usedFonts.add(S.card_title_font);
+  if (S.card_desc_font) usedFonts.add(S.card_desc_font);
+  if (S.mobile_card_title_font) usedFonts.add(S.mobile_card_title_font);
+  if (S.mobile_card_desc_font) usedFonts.add(S.mobile_card_desc_font);
+
+  let fontLinksHtml = '';
+  let needsFontPreconnect = false;
+  usedFonts.forEach(font => {
+    if (font && FONT_MAP[font]) {
+      fontLinksHtml += `<link rel="stylesheet" href="${FONT_MAP[font]}">`;
+      needsFontPreconnect = true;
+    }
+  });
+  const safeCustomFontUrl = sanitizeUrl(S.home_custom_font_url);
+  if (safeCustomFontUrl) fontLinksHtml += `<link rel="stylesheet" href="${safeCustomFontUrl}">`;
+  if (needsFontPreconnect) headInjections += `<link rel="preconnect" href="https://fonts.loli.net" crossorigin>`;
+  if (safeCustomFontUrl) {
+    try {
+      const customFontOrigin = new URL(safeCustomFontUrl).origin;
+      if (customFontOrigin !== 'https://fonts.loli.net') {
+        headInjections += `<link rel="preconnect" href="${escapeHTML(customFontOrigin)}" crossorigin>`;
+      }
+    } catch { /* sanitizeUrl 已校验 */ }
+  }
+  if (env.ICON_API) {
+    try {
+      const iconOrigin = new URL(env.ICON_API).origin;
+      headInjections += `<link rel="preconnect" href="${escapeHTML(iconOrigin)}" crossorigin>`;
+    } catch { /* ICON_API 格式异常时静默跳过 */ }
+  }
+  if (fontLinksHtml) headInjections += fontLinksHtml;
+
+  let customCardCss = '';
+  const desktopCardTitleStyle = getStyleStr(S.card_title_size, S.card_title_color, S.card_title_font).replace('style="', '').replace('"', '');
+  const mobileCardTitleStyle = getStyleStr(S.mobile_card_title_size, S.mobile_card_title_color, S.mobile_card_title_font).replace('style="', '').replace('"', '');
+  const desktopCardTitleColor = sanitizeStyleColor(S.card_title_color);
+  const mobileCardTitleColor = sanitizeStyleColor(S.mobile_card_title_color);
+  const desktopCardDescStyle = getStyleStr(S.card_desc_size, S.card_desc_color, S.card_desc_font).replace('style="', '').replace('"', '');
+  const mobileCardDescStyle = getStyleStr(S.mobile_card_desc_size, S.mobile_card_desc_color, S.mobile_card_desc_font).replace('style="', '').replace('"', '');
+  if (desktopCardTitleStyle || mobileCardTitleStyle) {
+    if (desktopCardTitleStyle) customCardCss += `@media (min-width: 768px) { .site-title { ${desktopCardTitleStyle} } }`;
+    if (mobileCardTitleStyle) customCardCss += `@media (max-width: 767px) { .site-title { ${mobileCardTitleStyle} } }`;
+  }
+  if (desktopCardTitleColor) customCardCss += `@media (min-width: 768px) { body { --desktop-card-title-color: ${desktopCardTitleColor}; } }`;
+  if (mobileCardTitleColor) customCardCss += `@media (max-width: 767px) { body { --mobile-card-title-color: ${mobileCardTitleColor}; } }`;
+  if (desktopCardDescStyle || mobileCardDescStyle) {
+    if (desktopCardDescStyle) customCardCss += `@media (min-width: 768px) { .site-card p { ${desktopCardDescStyle} } }`;
+    if (mobileCardDescStyle) customCardCss += `@media (max-width: 767px) { .site-card p { ${mobileCardDescStyle} } }`;
+  }
+  if (customCardCss) headInjections += `<style>${customCardCss}</style>`;
+
+  const cardHydrationState = buildCardHydrationState(allSites, S);
+  const safeSitesJson = JSON.stringify(cardHydrationState.cards).replace(/</g, '\\u003c');
+  const safeCardConfigsJson = JSON.stringify(cardHydrationState.configs).replace(/</g, '\\u003c');
+  const safeLayoutConfigJson = JSON.stringify({
+    hideDesc: S.layout_hide_desc,
+    hideLinks: S.layout_hide_links,
+    hideCategory: S.layout_hide_category,
+    gridCols: S.layout_grid_cols,
+    cardStyle: S.layout_card_style,
+    cardAnimation: S.layout_card_animation,
+    enableFrostedGlass: S.layout_enable_frosted_glass,
+    rememberLastCategory: S.home_remember_last_category,
+    ssrCatalogId: catalogExists ? requestedCatalogId : 'all',
+  }).replace(/</g, '\\u003c');
+
+  html = html.replace('</head>', headInjections + '</head>');
+
+  const pageStyleClasses = [
+    S.layout_card_style === 'style3' ? 'desktop-page-style3' : '',
+    S.mobile_layout_card_style === 'style3' ? 'mobile-page-style3' : '',
+    `category-pos-${categoryPosition}`,
+  ].filter(Boolean).join(' ');
+  html = html.replace(
+    '<body class="bg-secondary-50 font-sans text-gray-800">',
+    `<body class="bg-secondary-50 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 relative ${isCustomWallpaper ? 'custom-wallpaper' : ''} ${pageStyleClasses}">${bgLayerHtml}<div id="app-scroll">`
+  );
+
+  const sidebarToolsHtml = `
+    <div id="ioriSidebarTools" class="iori-sidebar-tools space-y-3">
+      <div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">标签布局自定义</div>
+      <div>
+        <div class="flex items-center justify-between text-xs mb-1">
+          <span>标签大小</span>
+          <span id="ioriScaleValue">100%</span>
+        </div>
+        <input id="ioriScaleRange" type="range" min="0.7" max="1.6" step="0.05" value="1" class="w-full cursor-pointer">
+      </div>
+      <button id="ioriDragToggleBtn" type="button" class="iori-sidebar-tool-btn">
+        <span>自由拖放位置</span>
+        <span id="ioriDragStatus" class="text-xs opacity-80">已关闭</span>
+      </button>
+      <button id="ioriResetLayoutBtn" type="button" class="iori-sidebar-tool-btn">
+        <span>恢复默认大小与位置</span>
+        <span class="text-xs opacity-70">重置</span>
+      </button>
+    </div>`;
+
+  if (html.includes('</aside>')) {
+    html = html.replace('</aside>', `${sidebarToolsHtml}</aside>`);
+  }
+
+  const layoutCustomScript = `<script>
+    (function () {
+      const SCALE_KEY = 'iori_tag_scale_v1';
+      const ORDER_KEY = 'iori_tag_order_v1';
+      let dragEnabled = false;
+      let draggedEl = null;
+
+      function getCardKey(el, idx) {
+        const link = el.matches('a[href]') ? el : el.querySelector('a[href]');
+        const href = link ? link.getAttribute('href') : '';
+        const title = (el.querySelector('.site-title') || el).textContent || '';
+        return (href + '|' + title.trim()) || ('idx-' + idx);
+      }
+
+      function applyScale(val) {
+        const num = Math.min(1.6, Math.max(0.7, parseFloat(val) || 1));
+        document.documentElement.style.setProperty('--iori-card-scale', String(num));
+        const range = document.getElementById('ioriScaleRange');
+        const label = document.getElementById('ioriScaleValue');
+        if (range) range.value = String(num);
+        if (label) label.textContent = Math.round(num * 100) + '%';
+        try { localStorage.setItem(SCALE_KEY, String(num)); } catch (e) {}
+      }
+
+      function saveOrder() {
+        const grid = document.getElementById('sitesGrid');
+        if (!grid) return;
+        const keys = Array.from(grid.children).map((el, i) => getCardKey(el, i));
+        try { localStorage.setItem(ORDER_KEY, JSON.stringify(keys)); } catch (e) {}
+      }
+
+      function applySavedOrder() {
+        const grid = document.getElementById('sitesGrid');
+        if (!grid) return;
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem(ORDER_KEY) || 'null'); } catch (e) {}
+        if (!Array.isArray(saved) || !saved.length) return;
+        const items = Array.from(grid.children);
+        const map = new Map();
+        items.forEach((el, i) => {
+          const k = getCardKey(el, i);
+          if (!map.has(k)) map.set(k, []);
+          map.get(k).push(el);
+        });
+        saved.forEach((k) => {
+          const bucket = map.get(k);
+          if (bucket && bucket.length) {
+            grid.appendChild(bucket.shift());
+          }
+        });
+        map.forEach((bucket) => {
+          bucket.forEach((el) => grid.appendChild(el));
+        });
+      }
+
+      function bindDragEvents() {
+        const grid = document.getElementById('sitesGrid');
+        if (!grid) return;
+        Array.from(grid.children).forEach((item) => {
+          item.setAttribute('draggable', dragEnabled ? 'true' : 'false');
+          if (item.dataset.ioriDragBound) return;
+          item.dataset.ioriDragBound = '1';
+
+          item.addEventListener('click', function (e) {
+            if (dragEnabled) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }, true);
+
+          item.addEventListener('dragstart', function (e) {
+            if (!dragEnabled) return;
+            draggedEl = item;
+            item.classList.add('iori-dragging');
+            if (e.dataTransfer) {
+              e.dataTransfer.effectAllowed = 'move';
+              e.dataTransfer.setData('text/plain', '');
+            }
+          });
+
+          item.addEventListener('dragover', function (e) {
+            if (!dragEnabled || !draggedEl || draggedEl === item) return;
+            e.preventDefault();
+            item.classList.add('iori-drag-over');
+          });
+
+          item.addEventListener('dragleave', function () {
+            item.classList.remove('iori-drag-over');
+          });
+
+          item.addEventListener('drop', function (e) {
+            if (!dragEnabled || !draggedEl || draggedEl === item) return;
+            e.preventDefault();
+            item.classList.remove('iori-drag-over');
+            const children = Array.from(grid.children);
+            const fromIdx = children.indexOf(draggedEl);
+            const toIdx = children.indexOf(item);
+            if (fromIdx < toIdx) {
+              grid.insertBefore(draggedEl, item.nextSibling);
+            } else {
+              grid.insertBefore(draggedEl, item);
+            }
+            saveOrder();
+          });
+
+          item.addEventListener('dragend', function () {
+            item.classList.remove('iori-dragging');
+            grid.querySelectorAll('.iori-drag-over').forEach((el) => el.classList.remove('iori-drag-over'));
+            draggedEl = null;
+          });
+        });
+      }
+
+      function setDragMode(enabled) {
+        dragEnabled = Boolean(enabled);
+        document.body.classList.toggle('iori-drag-mode', dragEnabled);
+        const btn = document.getElementById('ioriDragToggleBtn');
+        const status = document.getElementById('ioriDragStatus');
+        if (btn) btn.classList.toggle('is-active', dragEnabled);
+        if (status) status.textContent = dragEnabled ? '开启中' : '已关闭';
+        bindDragEvents();
+      }
+
+      function initCustomLayout() {
+        let savedScale = '1';
+        try { savedScale = localStorage.getItem(SCALE_KEY) || '1'; } catch (e) {}
+        applyScale(savedScale);
+        applySavedOrder();
+        bindDragEvents();
+
+        const range = document.getElementById('ioriScaleRange');
+        if (range && !range.dataset.bound) {
+          range.dataset.bound = '1';
+          range.addEventListener('input', function () {
+            applyScale(range.value);
+          });
+        }
+
+        const dragBtn = document.getElementById('ioriDragToggleBtn');
+        if (dragBtn && !dragBtn.dataset.bound) {
+          dragBtn.dataset.bound = '1';
+          dragBtn.addEventListener('click', function () {
+            setDragMode(!dragEnabled);
+          });
+        }
+
+        const resetBtn = document.getElementById('ioriResetLayoutBtn');
+        if (resetBtn && !resetBtn.dataset.bound) {
+          resetBtn.dataset.bound = '1';
+          resetBtn.addEventListener('click', function () {
+            try {
+              localStorage.removeItem(SCALE_KEY);
+              localStorage.removeItem(ORDER_KEY);
+            } catch (e) {}
+            applyScale(1);
+            setDragMode(false);
+            location.reload();
+          });
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCustomLayout);
+      } else {
+        initCustomLayout();
+      }
+
+      const grid = document.getElementById('sitesGrid');
+      if (grid && typeof MutationObserver !== 'undefined') {
+        new MutationObserver(function () {
+          applySavedOrder();
+          bindDragEvents();
+        }).observe(grid, { childList: true });
+      }
+    })();
+  </script>`;
+
+  html = html.replace('</body>', `${layoutCustomScript}</div></body>`);
+
+  const mainJsMarker = '<script src="/js/main.js';
+  if (!html.includes(mainJsMarker)) {
+    console.error('Card hydration injection skipped: main.js marker not found in template');
+  } else {
+    html = html.replace(
+      mainJsMarker,
+      () => `<script>window.IORI_SITES=${safeSitesJson};window.IORI_CARD_CONFIGS=${safeCardConfigsJson};window.IORI_LAYOUT_CONFIG=${safeLayoutConfigJson};</script>\n  ${mainJsMarker}`
+    );
+  }
+
+  const canonicalUrl = `${url.origin}/`;
+  const ogImageUrl = `${url.origin}/favicon.svg`;
+  const replacements = {
+    'HEADER_CONTENT': headerContent,
+    'HEADER_CLASS': headerClass,
+    'CONTAINER_CLASS': containerClass,
+    'FOOTER_CLASS': footerClass,
+    'HITOKOTO_CLASS': hitokotoClass,
+    'LEFT_TOP_ACTION': leftTopActionHtml,
+    'RIGHT_TOP_ACTION': topRightActionsHtml,
+    'SITE_NAME': escapeHTML(siteName),
+    'SITE_DESCRIPTION': escapeHTML(siteDescription),
+    'CANONICAL_URL': escapeHTML(canonicalUrl),
+    'OG_IMAGE_URL': escapeHTML(ogImageUrl),
+    'FOOTER_TEXT': escapeHTML(footerText),
+    'CATALOG_EXISTS': catalogExists ? 'true' : 'false',
+    'CATALOG_LINKS': catalogLinkMarkup,
+    'SUBMISSION_CLASS': submissionClass,
+    'HEADING_TEXT': headingText,
+    'HEADING_DEFAULT': headingDefaultAttr,
+    'HEADING_ACTIVE': headingActiveAttr,
+    'STATS_VISIBLE': S.home_hide_stats ? 'hidden' : '',
+    'STATS_STYLE': statsStyle,
+    'HITOKOTO_VISIBLE': S.home_hide_hitokoto ? 'hidden' : '',
+    'STATS_ROW_PY_CLASS': statsRowPyClass,
+    'STATS_ROW_HIDDEN': statsRowHiddenClass,
+    'HITOKOTO_CONTENT': hitokotoContent,
+    'HITOKOTO_STYLE': hitokotoStyle,
+    'SITES_GRID': sitesGridMarkup,
+    'CURRENT_YEAR': String(new Date().getFullYear()),
+    'SIDEBAR_CLASS': sidebarClass,
+    'MAIN_CLASS': mainClass,
+    'SIDEBAR_TOGGLE_CLASS': sidebarToggleClass,
+  };
+  html = html.replace(/\{\{(\w+)\}\}/g, (_, key) => replacements[key] ?? '');
+  html = html.replace('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6', gridClass);
+
+  html = html.replace(
+    /class="([^"]*?)max-w-(?:4xl|5xl|6xl|7xl)([^"]*?)"/g,
+    (_, before, after) => `class="${before}max-w-full${after}"`
+  );
+
+  html = html.replace(/>\s+</g, '><');
+
+  // === 17. 返回响应 ===
+  const response = new Response(html, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': isAuthenticated ? 'private, no-store, max-age=0' : 'public, max-age=0, must-revalidate',
+    }
+  });
+
+  if (shouldClearCookie) {
+    response.headers.append('Set-Cookie', 'iori_cache_stale=; Path=/; Max-Age=0; SameSite=Lax');
+    response.headers.append('Set-Cookie', 'iori_cache_public_stale=; Path=/; Max-Age=0; SameSite=Lax');
+    response.headers.append('Set-Cookie', 'iori_cache_private_stale=; Path=/; Max-Age=0; SameSite=Lax');
+  }
+
+  if (isHomePage && cacheGeneration !== null) {
+    context.waitUntil((async () => {
+      try {
+        const wrote = await writeHomeCacheIfUnchanged(env, cacheScope, html, cacheGeneration);
+        if (wrote && cacheDirty) {
+          await clearHomeCacheDirtyIfValue(env, cacheScope, cacheDirtyValue);
+        }
+      } catch (e) {
+        console.warn('Failed to update home cache:', e);
+      }
+    })());
+  }
+
+  return response;
+}
