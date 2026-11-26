@@ -224,7 +224,7 @@ export async function onRequest(context) {
   const allLinkActiveMarker = allLinkActive ? 'nav-item-active' : '';
   const horizontalAllLink = `
     <div class="menu-item-wrapper relative inline-block text-left">
-      <a href="?catalog=all" class="nav-btn ${allLinkClass} ${allLinkActiveMarker}">全部</a>
+      <a href="?catalog=all" class="nav-btn ${allLinkClass}${allLinkActiveMarker}">全部</a>
     </div>`;
   const horizontalCatalogMarkup = horizontalAllLink + renderHorizontalMenu(rootCategories, currentCatalogName);
   const catalogLinkMarkup = renderVerticalMenu(rootCategories, currentCatalogName, isCustomWallpaper);
@@ -253,10 +253,7 @@ export async function onRequest(context) {
   };
   const mobileCardStyleClass = getCardStyleGridClass(S.mobile_layout_card_style, 'mobile');
   const desktopCardStyleClass = getCardStyleGridClass(S.layout_card_style, 'desktop');
-  let gridClass = `grid w-full ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)} ${mobileCardStyleClass} ${desktopCardStyleClass} gap-2.5 sm:gap-3 justify-items-stretch`;
-
-  // === 12. 计算文本和统计信息 ===
-  const headingPlainText = currentCatalogName ? `${currentCatalogName} · ${sites.length} 个书签` : `全部收藏 · ${sites.length} 个书签`;
+  let gridClass = `grid w-full ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)}${mobileCardStyleClass} ${desktopCardStyleClass} gap-2.5 sm:gap-3 justify-items-stretch`;  // === 12. 计算文本和统计信息 === const headingPlainText = currentCatalogName ? `${currentCatalogName} · ${sites.length} 个书签` : `全部收藏 · ${sites.length} 个书签`;
   const headingText = escapeHTML(headingPlainText);
   const headingDefaultAttr = escapeHTML(headingPlainText);
   const headingActiveAttr = catalogExists ? escapeHTML(currentCatalogName) : '';
@@ -306,24 +303,11 @@ export async function onRequest(context) {
             <div id="horizontalMoreDropdown" class="dropdown-menu hidden absolute mt-2 w-auto z-50"></div>
           </div>`;
 
-  const colPickerHtml = `
-      <div id="ioriColPicker" class="iori-col-picker flex flex-wrap items-center justify-center gap-1.5 mt-3 text-xs select-none" aria-label="每排书签数量">
-        <span class="iori-col-picker-label opacity-80">每排:</span>
-        <button type="button" data-cols="auto" class="iori-col-btn active">自动</button>
-        <button type="button" data-cols="6" class="iori-col-btn">6列</button>
-        <button type="button" data-cols="8" class="iori-col-btn">8列</button>
-        <button type="button" data-cols="10" class="iori-col-btn">10列</button>
-        <button type="button" data-cols="12" class="iori-col-btn">12列</button>
-        <button type="button" data-cols="14" class="iori-col-btn">14列</button>
-      </div>`;
-
   const horizontalCategoryNavHtml = `
       <div class="${horizontalCategoryNavShellClass}">
-        <div id="horizontalCategoryNav" class="flex ${horizontalCategoryNavWrapClass} ${horizontalCategoryNavJustifyClass} items-center gap-3 ${horizontalCategoryNavOverflowClass} ${horizontalCategoryNavFlowClass} transition-all duration-300">
-          ${horizontalCatalogMarkup}
-          ${horizontalMoreHtml}
+        <div id="horizontalCategoryNav" class="flex ${horizontalCategoryNavWrapClass}${horizontalCategoryNavJustifyClass} items-center gap-3 ${horizontalCategoryNavOverflowClass}${horizontalCategoryNavFlowClass} transition-all duration-300">
+          ${horizontalCatalogMarkup}${horizontalMoreHtml}
         </div>
-        ${colPickerHtml}
       </div>`;
 
   const verticalHeaderContent = `
@@ -336,14 +320,12 @@ export async function onRequest(context) {
           <svg xmlns="http://www.w3.org/2000/svg" class="home-search-icon h-6 w-6 absolute left-4 top-3.5 ${searchIconClass}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
         </div>
       </div>
-      ${colPickerHtml}
     </div>`;
 
   const horizontalHeaderContent = `
     <div class="max-w-5xl mx-auto text-center relative z-10 ${themeClass}">
       ${categoryPosition === 'top' ? `<div class="category-nav-top-wrap">${horizontalCategoryNavHtml}</div>` : ''}
-      <div class="home-title-block max-w-4xl mx-auto mb-8">${horizontalTitleHtml}${horizontalSubtitleHtml}</div>
-      ${categoryPosition === 'above_search' ? `<div class="mb-6">${horizontalCategoryNavHtml}</div>` : ''}
+      <div class="home-title-block max-w-4xl mx-auto mb-8">${horizontalTitleHtml}${horizontalSubtitleHtml}</div>${categoryPosition === 'above_search' ? `<div class="mb-6">${horizontalCategoryNavHtml}</div>` : ''}
       <div class="home-search-shell relative max-w-xl mx-auto ${categoryPosition === 'below_search' ? 'mb-6' : ''}">
         ${searchEngineOptions}
         <div class="home-search-field relative">
@@ -413,7 +395,7 @@ export async function onRequest(context) {
   let bgLayerHtml = '';
   if (safeWallpaperUrl) {
     const blurStyle = S.layout_enable_bg_blur ? `filter: blur(${S.layout_bg_blur_intensity}px); transform: scale(1.02);` : '';
-    bgLayerHtml = `<div id="fixed-background" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -9999; pointer-events: none; overflow: hidden;"><img src="${safeWallpaperUrl}" alt="" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover; ${blurStyle}" /></div>`;
+    bgLayerHtml = `<div id="fixed-background" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -9999; pointer-events: none; overflow: hidden;"><img src="${safeWallpaperUrl}" alt="" fetchpriority="high" style="width: 100\%; height: 100\%; object-fit: cover; ${blurStyle}" /></div>`;
   } else {
     bgLayerHtml = `<div id="fixed-background" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -9999; pointer-events: none; background-color: ${defaultBgColor};"></div>`;
   }
@@ -422,7 +404,7 @@ export async function onRequest(context) {
     headInjections += `<link rel="preload" as="image" href="${safeWallpaperUrl}">\n`;
   }
 
-  // 去掉外层大格子 + 扁平方格高透明小格 + 窄两边留白 + 列数切换器样式
+  // 去掉外层大格子 + 扁平方格高透明小格 + 窄两边留白 + 侧边栏缩放/自由拖放样式
   headInjections += `<style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     #app-scroll { width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
@@ -452,22 +434,31 @@ export async function onRequest(context) {
       padding: 4px 0 !important;
     }
 
-    /* 菜单/分类区里的每排数量切换胶囊 */
-    .iori-col-btn {
-      padding: 2px 8px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.16);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      color: inherit;
+    /* 侧边栏菜单内的标签缩放与自由拖放工具栏 */
+    .iori-sidebar-tools {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(156, 163, 175, 0.25);
+      font-size: 0.875rem;
+    }
+    .iori-sidebar-tool-btn {
+      width: 100%;
+      padding: 0.45rem 0.65rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(156, 163, 175, 0.35);
+      background: rgba(255, 255, 255, 0.12);
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       transition: all 0.15s ease;
     }
-    .iori-col-btn:hover {
-      background: rgba(255, 255, 255, 0.28);
+    .iori-sidebar-tool-btn:hover {
+      background: rgba(255, 255, 255, 0.22);
     }
-    .iori-col-btn.active {
-      background: rgba(255, 255, 255, 0.38);
-      border-color: rgba(255, 255, 255, 0.65);
+    .iori-sidebar-tool-btn.is-active {
+      background: rgba(59, 130, 246, 0.22);
+      border-color: rgba(59, 130, 246, 0.7);
       font-weight: 600;
     }
 
@@ -475,306 +466,4 @@ export async function onRequest(context) {
     #sitesGrid .site-card,
     #sitesGrid > a,
     #sitesGrid > div {
-      background-color: rgba(255, 255, 255, 0.14) !important;
-      border: 1px solid rgba(255, 255, 255, 0.22) !important;
-      border-radius: 6px !important;
-      box-shadow: none !important;
-      backdrop-filter: blur(4px) !important;
-      -webkit-backdrop-filter: blur(4px) !important;
-      transition: background-color 0.15s ease, border-color 0.15s ease !important;
-    }
-    html.dark #sitesGrid .site-card,
-    html.dark #sitesGrid > a,
-    html.dark #sitesGrid > div {
-      background-color: rgba(17, 24, 39, 0.18) !important;
-      border-color: rgba(255, 255, 255, 0.1) !important;
-    }
-    #sitesGrid .site-card:hover,
-    #sitesGrid > a:hover,
-    #sitesGrid > div:hover {
-      background-color: rgba(255, 255, 255, 0.28) !important;
-      border-color: rgba(255, 255, 255, 0.42) !important;
-      box-shadow: none !important;
-      transform: none !important;
-    }
-    html.dark #sitesGrid .site-card:hover,
-    html.dark #sitesGrid > a:hover,
-    html.dark #sitesGrid > div:hover {
-      background-color: rgba(31, 41, 55, 0.34) !important;
-      border-color: rgba(255, 255, 255, 0.22) !important;
-    }
-
-    /* 移动端：安卓手机桌面图标风格（4 列紧凑图标） */
-    @media (max-width: 767px) {
-      #sitesGrid {
-        display: grid !important;
-        width: 100% !important;
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-        gap: 8px 6px !important;
-        justify-items: center !important;
-        align-items: start !important;
-      }
-      #sitesGrid > * {
-        width: 100% !important;
-        max-width: none !important;
-        min-width: 0 !important;
-        padding: 6px 2px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        text-align: center !important;
-      }
-      #sitesGrid .site-title {
-        font-size: 11px !important;
-        line-height: 1.2 !important;
-        margin-top: 4px !important;
-        max-width: 100% !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-      }
-      #sitesGrid p {
-        display: none !important;
-      }
-    }
-
-    /* 桌面端：两边留窄空（18px），默认一排十几个密集排布，可由菜单列数按钮覆盖 */
-    @media (min-width: 768px) {
-      .home-stats-row,
-      section:has(#sitesGrid) {
-        padding-left: 18px !important;
-        padding-right: 18px !important;
-      }
-      #sitesGrid {
-        display: grid !important;
-        width: 100% !important;
-        grid-template-columns: var(--iori-desktop-cols, repeat(auto-fill, minmax(105px, 1fr))) !important;
-        gap: 8px !important;
-        justify-items: stretch !important;
-      }
-      #sitesGrid > * {
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: none !important;
-        padding: 8px 6px !important;
-      }
-    }
-  </style>`;
-
-  const cardRadius = normalizeCssPixelValue(S.layout_card_border_radius, 6);
-  const mobileCardRadius = normalizeCssPixelValue(S.mobile_layout_card_border_radius, cardRadius);
-  const frostedBlur = normalizeCssPixelValue(S.layout_frosted_glass_intensity, 6);
-  const mobileFrostedBlur = normalizeCssPixelValue(S.mobile_layout_frosted_glass_intensity, frostedBlur);
-  headInjections += `<style>:root { --card-padding: 0.5rem; --card-radius: ${cardRadius}px; --frosted-glass-blur: ${frostedBlur}px; }@media (max-width: 767px) { :root { --card-radius: ${mobileCardRadius}px; --frosted-glass-blur: ${mobileFrostedBlur}px; } }</style>`;
-
-  const usedFonts = new Set();
-  if (!S.layout_hide_title && S.home_title_font) usedFonts.add(S.home_title_font);
-  if (!S.layout_hide_subtitle && S.home_subtitle_font) usedFonts.add(S.home_subtitle_font);
-  if (!S.home_hide_stats && S.home_stats_font) usedFonts.add(S.home_stats_font);
-  if (!S.home_hide_hitokoto && S.home_hitokoto_font) usedFonts.add(S.home_hitokoto_font);
-  if (S.card_title_font) usedFonts.add(S.card_title_font);
-  if (S.card_desc_font) usedFonts.add(S.card_desc_font);
-  if (S.mobile_card_title_font) usedFonts.add(S.mobile_card_title_font);
-  if (S.mobile_card_desc_font) usedFonts.add(S.mobile_card_desc_font);
-
-  let fontLinksHtml = '';
-  let needsFontPreconnect = false;
-  usedFonts.forEach(font => {
-    if (font && FONT_MAP[font]) {
-      fontLinksHtml += `<link rel="stylesheet" href="${FONT_MAP[font]}">`;
-      needsFontPreconnect = true;
-    }
-  });
-  const safeCustomFontUrl = sanitizeUrl(S.home_custom_font_url);
-  if (safeCustomFontUrl) fontLinksHtml += `<link rel="stylesheet" href="${safeCustomFontUrl}">`;
-  if (needsFontPreconnect) headInjections += `<link rel="preconnect" href="https://fonts.loli.net" crossorigin>`;
-  if (safeCustomFontUrl) {
-    try {
-      const customFontOrigin = new URL(safeCustomFontUrl).origin;
-      if (customFontOrigin !== 'https://fonts.loli.net') {
-        headInjections += `<link rel="preconnect" href="${escapeHTML(customFontOrigin)}" crossorigin>`;
-      }
-    } catch { /* sanitizeUrl 已校验 */ }
-  }
-  if (env.ICON_API) {
-    try {
-      const iconOrigin = new URL(env.ICON_API).origin;
-      headInjections += `<link rel="preconnect" href="${escapeHTML(iconOrigin)}" crossorigin>`;
-    } catch { /* ICON_API 格式异常时静默跳过 */ }
-  }
-  if (fontLinksHtml) headInjections += fontLinksHtml;
-
-  let customCardCss = '';
-  const desktopCardTitleStyle = getStyleStr(S.card_title_size, S.card_title_color, S.card_title_font).replace('style="', '').replace('"', '');
-  const mobileCardTitleStyle = getStyleStr(S.mobile_card_title_size, S.mobile_card_title_color, S.mobile_card_title_font).replace('style="', '').replace('"', '');
-  const desktopCardTitleColor = sanitizeStyleColor(S.card_title_color);
-  const mobileCardTitleColor = sanitizeStyleColor(S.mobile_card_title_color);
-  const desktopCardDescStyle = getStyleStr(S.card_desc_size, S.card_desc_color, S.card_desc_font).replace('style="', '').replace('"', '');
-  const mobileCardDescStyle = getStyleStr(S.mobile_card_desc_size, S.mobile_card_desc_color, S.mobile_card_desc_font).replace('style="', '').replace('"', '');
-  if (desktopCardTitleStyle || mobileCardTitleStyle) {
-    if (desktopCardTitleStyle) customCardCss += `@media (min-width: 768px) { .site-title { ${desktopCardTitleStyle} } }`;
-    if (mobileCardTitleStyle) customCardCss += `@media (max-width: 767px) { .site-title { ${mobileCardTitleStyle} } }`;
-  }
-  if (desktopCardTitleColor) customCardCss += `@media (min-width: 768px) { body { --desktop-card-title-color: ${desktopCardTitleColor}; } }`;
-  if (mobileCardTitleColor) customCardCss += `@media (max-width: 767px) { body { --mobile-card-title-color: ${mobileCardTitleColor}; } }`;
-  if (desktopCardDescStyle || mobileCardDescStyle) {
-    if (desktopCardDescStyle) customCardCss += `@media (min-width: 768px) { .site-card p { ${desktopCardDescStyle} } }`;
-    if (mobileCardDescStyle) customCardCss += `@media (max-width: 767px) { .site-card p { ${mobileCardDescStyle} } }`;
-  }
-  if (customCardCss) headInjections += `<style>${customCardCss}</style>`;
-
-  const cardHydrationState = buildCardHydrationState(allSites, S);
-  const safeSitesJson = JSON.stringify(cardHydrationState.cards).replace(/</g, '\\u003c');
-  const safeCardConfigsJson = JSON.stringify(cardHydrationState.configs).replace(/</g, '\\u003c');
-  const safeLayoutConfigJson = JSON.stringify({
-    hideDesc: S.layout_hide_desc,
-    hideLinks: S.layout_hide_links,
-    hideCategory: S.layout_hide_category,
-    gridCols: S.layout_grid_cols,
-    cardStyle: S.layout_card_style,
-    cardAnimation: S.layout_card_animation,
-    enableFrostedGlass: S.layout_enable_frosted_glass,
-    rememberLastCategory: S.home_remember_last_category,
-    ssrCatalogId: catalogExists ? requestedCatalogId : 'all',
-  }).replace(/</g, '\\u003c');
-
-  html = html.replace('</head>', headInjections + '</head>');
-
-  const pageStyleClasses = [
-    S.layout_card_style === 'style3' ? 'desktop-page-style3' : '',
-    S.mobile_layout_card_style === 'style3' ? 'mobile-page-style3' : '',
-    `category-pos-${categoryPosition}`,
-  ].filter(Boolean).join(' ');
-  html = html.replace(
-    '<body class="bg-secondary-50 font-sans text-gray-800">',
-    `<body class="bg-secondary-50 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 relative ${isCustomWallpaper ? 'custom-wallpaper' : ''} ${pageStyleClasses}">${bgLayerHtml}<div id="app-scroll">`
-  );
-
-  // 菜单“每排多少列”交互脚本（存入 localStorage，每次点击或分类刷新自动应用）
-  const colPickerScript = `<script>
-    (function () {
-      const STORAGE_KEY = 'iori_desktop_cols_v1';
-      function applyCols(cols) {
-        const val = String(cols || 'auto');
-        try { localStorage.setItem(STORAGE_KEY, val); } catch (e) {}
-        document.querySelectorAll('.iori-col-btn').forEach((btn) => {
-          btn.classList.toggle('active', btn.getAttribute('data-cols') === val);
-        });
-        const grid = document.getElementById('sitesGrid');
-        if (!grid) return;
-        if (val === 'auto') {
-          grid.style.removeProperty('--iori-desktop-cols');
-        } else {
-          const num = parseInt(val, 10);
-          if (num >= 2 && num <= 20) {
-            grid.style.setProperty('--iori-desktop-cols', 'repeat(' + num + ', minmax(0, 1fr))');
-          }
-        }
-      }
-      document.addEventListener('click', function (e) {
-        const btn = e.target.closest('.iori-col-btn');
-        if (!btn) return;
-        applyCols(btn.getAttribute('data-cols'));
-      });
-      function initCols() {
-        let saved = 'auto';
-        try { saved = localStorage.getItem(STORAGE_KEY) || 'auto'; } catch (e) {}
-        applyCols(saved);
-      }
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initCols);
-      } else {
-        initCols();
-      }
-      const grid = document.getElementById('sitesGrid');
-      if (grid && typeof MutationObserver !== 'undefined') {
-        new MutationObserver(initCols).observe(grid, { childList: true });
-      }
-    })();
-  </script>`;
-
-  html = html.replace('</body>', `${colPickerScript}</div></body>`);
-
-  const mainJsMarker = '<script src="/js/main.js';
-  if (!html.includes(mainJsMarker)) {
-    console.error('Card hydration injection skipped: main.js marker not found in template');
-  } else {
-    html = html.replace(
-      mainJsMarker,
-      () => `<script>window.IORI_SITES=${safeSitesJson};window.IORI_CARD_CONFIGS=${safeCardConfigsJson};window.IORI_LAYOUT_CONFIG=${safeLayoutConfigJson};</script>\n  ${mainJsMarker}`
-    );
-  }
-
-  const canonicalUrl = `${url.origin}/`;
-  const ogImageUrl = `${url.origin}/favicon.svg`;
-  const replacements = {
-    'HEADER_CONTENT': headerContent,
-    'HEADER_CLASS': headerClass,
-    'CONTAINER_CLASS': containerClass,
-    'FOOTER_CLASS': footerClass,
-    'HITOKOTO_CLASS': hitokotoClass,
-    'LEFT_TOP_ACTION': leftTopActionHtml,
-    'RIGHT_TOP_ACTION': topRightActionsHtml,
-    'SITE_NAME': escapeHTML(siteName),
-    'SITE_DESCRIPTION': escapeHTML(siteDescription),
-    'CANONICAL_URL': escapeHTML(canonicalUrl),
-    'OG_IMAGE_URL': escapeHTML(ogImageUrl),
-    'FOOTER_TEXT': escapeHTML(footerText),
-    'CATALOG_EXISTS': catalogExists ? 'true' : 'false',
-    'CATALOG_LINKS': catalogLinkMarkup,
-    'SUBMISSION_CLASS': submissionClass,
-    'HEADING_TEXT': headingText,
-    'HEADING_DEFAULT': headingDefaultAttr,
-    'HEADING_ACTIVE': headingActiveAttr,
-    'STATS_VISIBLE': S.home_hide_stats ? 'hidden' : '',
-    'STATS_STYLE': statsStyle,
-    'HITOKOTO_VISIBLE': S.home_hide_hitokoto ? 'hidden' : '',
-    'STATS_ROW_PY_CLASS': statsRowPyClass,
-    'STATS_ROW_HIDDEN': statsRowHiddenClass,
-    'HITOKOTO_CONTENT': hitokotoContent,
-    'HITOKOTO_STYLE': hitokotoStyle,
-    'SITES_GRID': sitesGridMarkup,
-    'CURRENT_YEAR': String(new Date().getFullYear()),
-    'SIDEBAR_CLASS': sidebarClass,
-    'MAIN_CLASS': mainClass,
-    'SIDEBAR_TOGGLE_CLASS': sidebarToggleClass,
-  };
-  html = html.replace(/\{\{(\w+)\}\}/g, (_, key) => replacements[key] ?? '');
-  html = html.replace('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6', gridClass);
-
-  html = html.replace(
-    /class="([^"]*?)max-w-(?:4xl|5xl|6xl|7xl)([^"]*?)"/g,
-    (_, before, after) => `class="${before}max-w-full${after}"`
-  );
-
-  html = html.replace(/>\s+</g, '><');
-
-  // === 17. 返回响应 ===
-  const response = new Response(html, {
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': isAuthenticated ? 'private, no-store, max-age=0' : 'public, max-age=0, must-revalidate',
-    }
-  });
-
-  if (shouldClearCookie) {
-    response.headers.append('Set-Cookie', 'iori_cache_stale=; Path=/; Max-Age=0; SameSite=Lax');
-    response.headers.append('Set-Cookie', 'iori_cache_public_stale=; Path=/; Max-Age=0; SameSite=Lax');
-    response.headers.append('Set-Cookie', 'iori_cache_private_stale=; Path=/; Max-Age=0; SameSite=Lax');
-  }
-
-  if (isHomePage && cacheGeneration !== null) {
-    context.waitUntil((async () => {
-      try {
-        const wrote = await writeHomeCacheIfUnchanged(env, cacheScope, html, cacheGeneration);
-        if (wrote && cacheDirty) {
-          await clearHomeCacheDirtyIfValue(env, cacheScope, cacheDirtyValue);
-        }
-      } catch (e) {
-        console.warn('Failed to update home cache:', e);
-      }
-    })());
-  }
-
-  return response;
-}
+      background-color: rgba(255, 255
