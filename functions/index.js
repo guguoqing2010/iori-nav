@@ -224,7 +224,7 @@ export async function onRequest(context) {
   const allLinkActiveMarker = allLinkActive ? 'nav-item-active' : '';
   const horizontalAllLink = `
     <div class="menu-item-wrapper relative inline-block text-left">
-      <a href="?catalog=all" class="nav-btn ${allLinkClass} ${allLinkActiveMarker}">全部</a>
+      <a href="?catalog=all" class="nav-btn ${allLinkClass}${allLinkActiveMarker}">全部</a>
     </div>`;
   const horizontalCatalogMarkup = horizontalAllLink + renderHorizontalMenu(rootCategories, currentCatalogName);
   const catalogLinkMarkup = renderVerticalMenu(rootCategories, currentCatalogName, isCustomWallpaper);
@@ -253,7 +253,7 @@ export async function onRequest(context) {
   };
   const mobileCardStyleClass = getCardStyleGridClass(S.mobile_layout_card_style, 'mobile');
   const desktopCardStyleClass = getCardStyleGridClass(S.layout_card_style, 'desktop');
-  let gridClass = `grid w-full ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)} ${mobileCardStyleClass} ${desktopCardStyleClass} gap-2.5 sm:gap-3 justify-items-stretch`;
+  let gridClass = `grid w-full ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)}${mobileCardStyleClass} ${desktopCardStyleClass} gap-2.5 sm:gap-3 justify-items-stretch`;
 
   // === 12. 计算文本和统计信息 ===
   const headingPlainText = currentCatalogName ? `${currentCatalogName} · ${sites.length} 个书签` : `全部收藏 · ${sites.length} 个书签`;
@@ -308,9 +308,8 @@ export async function onRequest(context) {
 
   const horizontalCategoryNavHtml = `
       <div class="${horizontalCategoryNavShellClass}">
-        <div id="horizontalCategoryNav" class="flex ${horizontalCategoryNavWrapClass} ${horizontalCategoryNavJustifyClass} items-center gap-3 ${horizontalCategoryNavOverflowClass} ${horizontalCategoryNavFlowClass} transition-all duration-300">
-          ${horizontalCatalogMarkup}
-          ${horizontalMoreHtml}
+        <div id="horizontalCategoryNav" class="flex ${horizontalCategoryNavWrapClass}${horizontalCategoryNavJustifyClass} items-center gap-3 ${horizontalCategoryNavOverflowClass}${horizontalCategoryNavFlowClass} transition-all duration-300">
+          ${horizontalCatalogMarkup}${horizontalMoreHtml}
         </div>
       </div>`;
 
@@ -329,8 +328,7 @@ export async function onRequest(context) {
   const horizontalHeaderContent = `
     <div class="max-w-5xl mx-auto text-center relative z-10 ${themeClass}">
       ${categoryPosition === 'top' ? `<div class="category-nav-top-wrap">${horizontalCategoryNavHtml}</div>` : ''}
-      <div class="home-title-block max-w-4xl mx-auto mb-8">${horizontalTitleHtml}${horizontalSubtitleHtml}</div>
-      ${categoryPosition === 'above_search' ? `<div class="mb-6">${horizontalCategoryNavHtml}</div>` : ''}
+      <div class="home-title-block max-w-4xl mx-auto mb-8">${horizontalTitleHtml}${horizontalSubtitleHtml}</div>${categoryPosition === 'above_search' ? `<div class="mb-6">${horizontalCategoryNavHtml}</div>` : ''}
       <div class="home-search-shell relative max-w-xl mx-auto ${categoryPosition === 'below_search' ? 'mb-6' : ''}">
         ${searchEngineOptions}
         <div class="home-search-field relative">
@@ -416,14 +414,19 @@ export async function onRequest(context) {
     #fixed-background { transition: background-color 0.3s ease, filter 0.3s ease; }
     @supports (-webkit-touch-callout: none) { #fixed-background { height: -webkit-fill-available; } }
 
+    /* 屏幕左右两边统一 1cm 留白 */
+    #app-scroll,
+    main,
     .home-stats-row,
     section:has(#sitesGrid) {
       max-width: 100% !important;
       width: 100% !important;
-      padding-left: 10px !important;
-      padding-right: 10px !important;
+      padding-left: 1cm !important;
+      padding-right: 1cm !important;
+      box-sizing: border-box !important;
     }
 
+    /* 彻底去掉包裹书签网格的大格子 */
     section:has(#sitesGrid) > div {
       width: 100% !important;
       max-width: 100% !important;
@@ -464,6 +467,7 @@ export async function onRequest(context) {
       font-weight: 600;
     }
 
+    /* 单个书签小格：扁平化方格 + 高透明度 */
     #sitesGrid .site-card,
     #sitesGrid > a,
     #sitesGrid > div {
@@ -511,35 +515,46 @@ export async function onRequest(context) {
       background-color: rgba(59, 130, 246, 0.22) !important;
     }
 
+    /* 标签大小自由调节：直接驱动网格单元宽度、图标与文字大小 */
+    #sitesGrid {
+      display: grid !important;
+      width: 100% !important;
+      grid-template-columns: repeat(auto-fill, minmax(calc(96px * var(--iori-card-scale, 1)), 1fr)) !important;
+      gap: 8px !important;
+      justify-items: stretch !important;
+    }
+    #sitesGrid > * {
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      padding: calc(8px * var(--iori-card-scale, 1)) calc(6px * var(--iori-card-scale, 1)) !important;
+      box-sizing: border-box !important;
+    }
+    #sitesGrid > * img,
+    #sitesGrid > * svg {
+      width: calc(32px * var(--iori-card-scale, 1)) !important;
+      height: calc(32px * var(--iori-card-scale, 1)) !important;
+      max-width: none !important;
+      max-height: none !important;
+    }
+    #sitesGrid .site-title {
+      font-size: calc(13px * var(--iori-card-scale, 1)) !important;
+      line-height: 1.25 !important;
+    }
     @media (max-width: 767px) {
       #sitesGrid {
-        display: grid !important;
-        width: 100% !important;
         grid-template-columns: repeat(auto-fill, minmax(calc(72px * var(--iori-card-scale, 1)), 1fr)) !important;
         gap: 8px 6px !important;
-        justify-items: center !important;
-        align-items: start !important;
       }
       #sitesGrid > * {
-        width: 100% !important;
-        max-width: none !important;
-        min-width: 0 !important;
-        padding: calc(6px * var(--iori-card-scale, 1)) 2px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         text-align: center !important;
       }
-      #sitesGrid > * img,
-      #sitesGrid > * svg {
-        width: calc(36px * var(--iori-card-scale, 1)) !important;
-        height: calc(36px * var(--iori-card-scale, 1)) !important;
-      }
       #sitesGrid .site-title {
         font-size: calc(11px * var(--iori-card-scale, 1)) !important;
-        line-height: 1.2 !important;
         margin-top: 4px !important;
-        max-width: 100% !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
@@ -548,42 +563,13 @@ export async function onRequest(context) {
         display: none !important;
       }
     }
-
-    @media (min-width: 768px) {
-      .home-stats-row,
-      section:has(#sitesGrid) {
-        padding-left: 16px !important;
-        padding-right: 16px !important;
-      }
-      #sitesGrid {
-        display: grid !important;
-        width: 100% !important;
-        grid-template-columns: repeat(auto-fill, minmax(calc(105px * var(--iori-card-scale, 1)), 1fr)) !important;
-        gap: 8px !important;
-        justify-items: stretch !important;
-      }
-      #sitesGrid > * {
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: none !important;
-        padding: calc(8px * var(--iori-card-scale, 1)) calc(6px * var(--iori-card-scale, 1)) !important;
-      }
-      #sitesGrid > * img,
-      #sitesGrid > * svg {
-        width: calc(32px * var(--iori-card-scale, 1)) !important;
-        height: calc(32px * var(--iori-card-scale, 1)) !important;
-      }
-      #sitesGrid .site-title {
-        font-size: calc(13px * var(--iori-card-scale, 1)) !important;
-      }
-    }
   </style>`;
 
   const cardRadius = normalizeCssPixelValue(S.layout_card_border_radius, 6);
   const mobileCardRadius = normalizeCssPixelValue(S.mobile_layout_card_border_radius, cardRadius);
   const frostedBlur = normalizeCssPixelValue(S.layout_frosted_glass_intensity, 6);
   const mobileFrostedBlur = normalizeCssPixelValue(S.mobile_layout_frosted_glass_intensity, frostedBlur);
-  headInjections += `<style>:root { --card-padding: 0.5rem; --card-radius: ${cardRadius}px; --frosted-glass-blur: ${frostedBlur}px; --iori-card-scale: 1; }@media (max-width: 767px) { :root { --card-radius: ${mobileCardRadius}px; --frosted-glass-blur: ${mobileFrostedBlur}px; } }</style>`;
+  headInjections += `<style>:root { --card-padding: 0.5rem; --card-radius: ${cardRadius}px; --frosted-glass-blur:${frostedBlur}px; --iori-card-scale: 1; }@media (max-width: 767px) { :root { --card-radius: ${mobileCardRadius}px; --frosted-glass-blur:${mobileFrostedBlur}px; } }</style>`;
 
   const usedFonts = new Set();
   if (!S.layout_hide_title && S.home_title_font) usedFonts.add(S.home_title_font);
@@ -630,38 +616,14 @@ export async function onRequest(context) {
   const desktopCardDescStyle = getStyleStr(S.card_desc_size, S.card_desc_color, S.card_desc_font).replace('style="', '').replace('"', '');
   const mobileCardDescStyle = getStyleStr(S.mobile_card_desc_size, S.mobile_card_desc_color, S.mobile_card_desc_font).replace('style="', '').replace('"', '');
   if (desktopCardTitleStyle || mobileCardTitleStyle) {
-    if (desktopCardTitleStyle) customCardCss += `@media (min-width: 768px) { .site-title { ${desktopCardTitleStyle} } }`;
-    if (mobileCardTitleStyle) customCardCss += `@media (max-width: 767px) { .site-title { ${mobileCardTitleStyle} } }`;
+    if (desktopCardTitleStyle) customCardCss += `@media (min-width: 768px) { .site-title { ${desktopCardTitleStyle} } }`; if (mobileCardTitleStyle) customCardCss += `@media (max-width: 767px) { .site-title { ${mobileCardTitleStyle} } }`;
   }
-  if (desktopCardTitleColor) customCardCss += `@media (min-width: 768px) { body { --desktop-card-title-color: ${desktopCardTitleColor}; } }`;
-  if (mobileCardTitleColor) customCardCss += `@media (max-width: 767px) { body { --mobile-card-title-color: ${mobileCardTitleColor}; } }`;
+  if (desktopCardTitleColor) customCardCss += `@media (min-width: 768px) { body { --desktop-card-title-color: ${desktopCardTitleColor}; } }`; if (mobileCardTitleColor) customCardCss += `@media (max-width: 767px) { body { --mobile-card-title-color: ${mobileCardTitleColor}; } }`;
   if (desktopCardDescStyle || mobileCardDescStyle) {
     if (desktopCardDescStyle) customCardCss += `@media (min-width: 768px) { .site-card p { ${desktopCardDescStyle} } }`;
     if (mobileCardDescStyle) customCardCss += `@media (max-width: 767px) { .site-card p { ${mobileCardDescStyle} } }`;
   }
-  if (customCardCss) headInjections += `<style>${customCardCss}</style>`;
-
-  const cardHydrationState = buildCardHydrationState(allSites, S);
-  const safeSitesJson = JSON.stringify(cardHydrationState.cards).replace(/</g, '\\u003c');
-  const safeCardConfigsJson = JSON.stringify(cardHydrationState.configs).replace(/</g, '\\u003c');
-  const safeLayoutConfigJson = JSON.stringify({
-    hideDesc: S.layout_hide_desc,
-    hideLinks: S.layout_hide_links,
-    hideCategory: S.layout_hide_category,
-    gridCols: S.layout_grid_cols,
-    cardStyle: S.layout_card_style,
-    cardAnimation: S.layout_card_animation,
-    enableFrostedGlass: S.layout_enable_frosted_glass,
-    rememberLastCategory: S.home_remember_last_category,
-    ssrCatalogId: catalogExists ? requestedCatalogId : 'all',
-  }).replace(/</g, '\\u003c');
-
-  html = html.replace('</head>', headInjections + '</head>');
-
-  const pageStyleClasses = [
-    S.layout_card_style === 'style3' ? 'desktop-page-style3' : '',
-    S.mobile_layout_card_style === 'style3' ? 'mobile-page-style3' : '',
-    `category-pos-${categoryPosition}`,
+  if (customCardCss) headInjections += `<style>${customCardCss}</style>`;  const cardHydrationState = buildCardHydrationState(allSites, S); const safeSitesJson = JSON.stringify(cardHydrationState.cards).replace(/</g, '\\u003c'); const safeCardConfigsJson = JSON.stringify(cardHydrationState.configs).replace(/</g, '\\u003c'); const safeLayoutConfigJson = JSON.stringify({ hideDesc: S.layout_hide_desc, hideLinks: S.layout_hide_links, hideCategory: S.layout_hide_category, gridCols: S.layout_grid_cols, cardStyle: S.layout_card_style, cardAnimation: S.layout_card_animation, enableFrostedGlass: S.layout_enable_frosted_glass, rememberLastCategory: S.home_remember_last_category, ssrCatalogId: catalogExists ? requestedCatalogId : 'all', }).replace(/</g, '\\u003c');  html = html.replace('</head>', headInjections + '</head>');  const pageStyleClasses = [ S.layout_card_style === 'style3' ? 'desktop-page-style3' : '', S.mobile_layout_card_style === 'style3' ? 'mobile-page-style3' : '', `category-pos-${categoryPosition}`,
   ].filter(Boolean).join(' ');
   html = html.replace(
     '<body class="bg-secondary-50 font-sans text-gray-800">',
@@ -676,7 +638,7 @@ export async function onRequest(context) {
           <span>标签大小</span>
           <span id="ioriScaleValue">100%</span>
         </div>
-        <input id="ioriScaleRange" type="range" min="0.7" max="1.6" step="0.05" value="1" class="w-full cursor-pointer">
+        <input id="ioriScaleRange" type="range" min="0.6" max="1.8" step="0.05" value="1" class="w-full cursor-pointer">
       </div>
       <button id="ioriDragToggleBtn" type="button" class="iori-sidebar-tool-btn">
         <span>自由拖放位置</span>
@@ -707,8 +669,10 @@ export async function onRequest(context) {
       }
 
       function applyScale(val) {
-        const num = Math.min(1.6, Math.max(0.7, parseFloat(val) || 1));
+        const num = Math.min(1.8, Math.max(0.6, parseFloat(val) || 1));
         document.documentElement.style.setProperty('--iori-card-scale', String(num));
+        const grid = document.getElementById('sitesGrid');
+        if (grid) grid.style.setProperty('--iori-card-scale', String(num));
         const range = document.getElementById('ioriScaleRange');
         const label = document.getElementById('ioriScaleValue');
         if (range) range.value = String(num);
@@ -742,215 +706,3 @@ export async function onRequest(context) {
             grid.appendChild(bucket.shift());
           }
         });
-        map.forEach((bucket) => {
-          bucket.forEach((el) => grid.appendChild(el));
-        });
-      }
-
-      function bindDragEvents() {
-        const grid = document.getElementById('sitesGrid');
-        if (!grid) return;
-        Array.from(grid.children).forEach((item) => {
-          item.setAttribute('draggable', dragEnabled ? 'true' : 'false');
-          if (item.dataset.ioriDragBound) return;
-          item.dataset.ioriDragBound = '1';
-
-          item.addEventListener('click', function (e) {
-            if (dragEnabled) {
-              e.preventDefault();
-              e.stopPropagation();
-            }
-          }, true);
-
-          item.addEventListener('dragstart', function (e) {
-            if (!dragEnabled) return;
-            draggedEl = item;
-            item.classList.add('iori-dragging');
-            if (e.dataTransfer) {
-              e.dataTransfer.effectAllowed = 'move';
-              e.dataTransfer.setData('text/plain', '');
-            }
-          });
-
-          item.addEventListener('dragover', function (e) {
-            if (!dragEnabled || !draggedEl || draggedEl === item) return;
-            e.preventDefault();
-            item.classList.add('iori-drag-over');
-          });
-
-          item.addEventListener('dragleave', function () {
-            item.classList.remove('iori-drag-over');
-          });
-
-          item.addEventListener('drop', function (e) {
-            if (!dragEnabled || !draggedEl || draggedEl === item) return;
-            e.preventDefault();
-            item.classList.remove('iori-drag-over');
-            const children = Array.from(grid.children);
-            const fromIdx = children.indexOf(draggedEl);
-            const toIdx = children.indexOf(item);
-            if (fromIdx < toIdx) {
-              grid.insertBefore(draggedEl, item.nextSibling);
-            } else {
-              grid.insertBefore(draggedEl, item);
-            }
-            saveOrder();
-          });
-
-          item.addEventListener('dragend', function () {
-            item.classList.remove('iori-dragging');
-            grid.querySelectorAll('.iori-drag-over').forEach((el) => el.classList.remove('iori-drag-over'));
-            draggedEl = null;
-          });
-        });
-      }
-
-      function setDragMode(enabled) {
-        dragEnabled = Boolean(enabled);
-        document.body.classList.toggle('iori-drag-mode', dragEnabled);
-        const btn = document.getElementById('ioriDragToggleBtn');
-        const status = document.getElementById('ioriDragStatus');
-        if (btn) btn.classList.toggle('is-active', dragEnabled);
-        if (status) status.textContent = dragEnabled ? '开启中' : '已关闭';
-        bindDragEvents();
-      }
-
-      function initCustomLayout() {
-        let savedScale = '1';
-        try { savedScale = localStorage.getItem(SCALE_KEY) || '1'; } catch (e) {}
-        applyScale(savedScale);
-        applySavedOrder();
-        bindDragEvents();
-
-        const range = document.getElementById('ioriScaleRange');
-        if (range && !range.dataset.bound) {
-          range.dataset.bound = '1';
-          range.addEventListener('input', function () {
-            applyScale(range.value);
-          });
-        }
-
-        const dragBtn = document.getElementById('ioriDragToggleBtn');
-        if (dragBtn && !dragBtn.dataset.bound) {
-          dragBtn.dataset.bound = '1';
-          dragBtn.addEventListener('click', function () {
-            setDragMode(!dragEnabled);
-          });
-        }
-
-        const resetBtn = document.getElementById('ioriResetLayoutBtn');
-        if (resetBtn && !resetBtn.dataset.bound) {
-          resetBtn.dataset.bound = '1';
-          resetBtn.addEventListener('click', function () {
-            try {
-              localStorage.removeItem(SCALE_KEY);
-              localStorage.removeItem(ORDER_KEY);
-            } catch (e) {}
-            applyScale(1);
-            setDragMode(false);
-            location.reload();
-          });
-        }
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initCustomLayout);
-      } else {
-        initCustomLayout();
-      }
-
-      const grid = document.getElementById('sitesGrid');
-      if (grid && typeof MutationObserver !== 'undefined') {
-        new MutationObserver(function () {
-          applySavedOrder();
-          bindDragEvents();
-        }).observe(grid, { childList: true });
-      }
-    })();
-  </script>`;
-
-  html = html.replace('</body>', `${layoutCustomScript}</div></body>`);
-
-  const mainJsMarker = '<script src="/js/main.js';
-  if (!html.includes(mainJsMarker)) {
-    console.error('Card hydration injection skipped: main.js marker not found in template');
-  } else {
-    html = html.replace(
-      mainJsMarker,
-      () => `<script>window.IORI_SITES=${safeSitesJson};window.IORI_CARD_CONFIGS=${safeCardConfigsJson};window.IORI_LAYOUT_CONFIG=${safeLayoutConfigJson};</script>\n  ${mainJsMarker}`
-    );
-  }
-
-  const canonicalUrl = `${url.origin}/`;
-  const ogImageUrl = `${url.origin}/favicon.svg`;
-  const replacements = {
-    'HEADER_CONTENT': headerContent,
-    'HEADER_CLASS': headerClass,
-    'CONTAINER_CLASS': containerClass,
-    'FOOTER_CLASS': footerClass,
-    'HITOKOTO_CLASS': hitokotoClass,
-    'LEFT_TOP_ACTION': leftTopActionHtml,
-    'RIGHT_TOP_ACTION': topRightActionsHtml,
-    'SITE_NAME': escapeHTML(siteName),
-    'SITE_DESCRIPTION': escapeHTML(siteDescription),
-    'CANONICAL_URL': escapeHTML(canonicalUrl),
-    'OG_IMAGE_URL': escapeHTML(ogImageUrl),
-    'FOOTER_TEXT': escapeHTML(footerText),
-    'CATALOG_EXISTS': catalogExists ? 'true' : 'false',
-    'CATALOG_LINKS': catalogLinkMarkup,
-    'SUBMISSION_CLASS': submissionClass,
-    'HEADING_TEXT': headingText,
-    'HEADING_DEFAULT': headingDefaultAttr,
-    'HEADING_ACTIVE': headingActiveAttr,
-    'STATS_VISIBLE': S.home_hide_stats ? 'hidden' : '',
-    'STATS_STYLE': statsStyle,
-    'HITOKOTO_VISIBLE': S.home_hide_hitokoto ? 'hidden' : '',
-    'STATS_ROW_PY_CLASS': statsRowPyClass,
-    'STATS_ROW_HIDDEN': statsRowHiddenClass,
-    'HITOKOTO_CONTENT': hitokotoContent,
-    'HITOKOTO_STYLE': hitokotoStyle,
-    'SITES_GRID': sitesGridMarkup,
-    'CURRENT_YEAR': String(new Date().getFullYear()),
-    'SIDEBAR_CLASS': sidebarClass,
-    'MAIN_CLASS': mainClass,
-    'SIDEBAR_TOGGLE_CLASS': sidebarToggleClass,
-  };
-  html = html.replace(/\{\{(\w+)\}\}/g, (_, key) => replacements[key] ?? '');
-  html = html.replace('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6', gridClass);
-
-  html = html.replace(
-    /class="([^"]*?)max-w-(?:4xl|5xl|6xl|7xl)([^"]*?)"/g,
-    (_, before, after) => `class="${before}max-w-full${after}"`
-  );
-
-  html = html.replace(/>\s+</g, '><');
-
-  // === 17. 返回响应 ===
-  const response = new Response(html, {
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': isAuthenticated ? 'private, no-store, max-age=0' : 'public, max-age=0, must-revalidate',
-    }
-  });
-
-  if (shouldClearCookie) {
-    response.headers.append('Set-Cookie', 'iori_cache_stale=; Path=/; Max-Age=0; SameSite=Lax');
-    response.headers.append('Set-Cookie', 'iori_cache_public_stale=; Path=/; Max-Age=0; SameSite=Lax');
-    response.headers.append('Set-Cookie', 'iori_cache_private_stale=; Path=/; Max-Age=0; SameSite=Lax');
-  }
-
-  if (isHomePage && cacheGeneration !== null) {
-    context.waitUntil((async () => {
-      try {
-        const wrote = await writeHomeCacheIfUnchanged(env, cacheScope, html, cacheGeneration);
-        if (wrote && cacheDirty) {
-          await clearHomeCacheDirtyIfValue(env, cacheScope, cacheDirtyValue);
-        }
-      } catch (e) {
-        console.warn('Failed to update home cache:', e);
-      }
-    })());
-  }
-
-  return response;
-}
