@@ -9,7 +9,6 @@ import { buildCardHydrationState } from './lib/card-model';
 import { ensureSchemaReady } from './lib/schema-migration';
 import { resolveWallpaperUrl } from './lib/wallpaper-defaults';
 
-// 模板内容在 Worker 运行时实例生命周期内不变（部署会替换实例），缓存避免每次 MISS 重复 ASSETS.fetch
 let cachedTemplateHtml = null;
 async function getTemplateHtml(env, requestUrl) {
   if (cachedTemplateHtml !== null) return cachedTemplateHtml;
@@ -21,14 +20,14 @@ async function getTemplateHtml(env, requestUrl) {
 function getThemeClasses(isCustomWallpaper) {
   return isCustomWallpaper ? {
     headerClass: 'bg-transparent border-none shadow-none transition-colors duration-300',
-    containerClass: 'rounded-2xl',
+    containerClass: '',
     titleColorClass: 'text-gray-900 dark:text-gray-100',
     subTextColorClass: 'text-gray-600 dark:text-gray-300',
     searchInputClass: 'bg-white/90 backdrop-blur border border-gray-200 text-gray-800 placeholder-gray-400 focus:ring-primary-200 focus:border-primary-400 focus:bg-white dark:bg-gray-800/90 dark:border-gray-600 dark:text-gray-200 dark:focus:bg-gray-800',
     searchIconClass: 'text-gray-400 dark:text-gray-500',
   } : {
     headerClass: 'bg-primary-700 text-white border-b border-primary-600 shadow-sm dark:bg-gray-900 dark:border-gray-800',
-    containerClass: 'rounded-2xl border border-primary-100/60 bg-white/80 backdrop-blur-sm shadow-sm dark:bg-gray-800/80 dark:border-gray-700',
+    containerClass: '',
     titleColorClass: 'text-white',
     subTextColorClass: 'text-primary-100/90 dark:text-gray-400',
     searchInputClass: 'bg-white/15 text-white placeholder-primary-200 focus:ring-white/30 focus:bg-white/20 border-none dark:bg-gray-800/50 dark:text-gray-200 dark:placeholder-gray-500',
@@ -272,7 +271,7 @@ export async function onRequest(context) {
   const hitokotoStyle = getStyleStr(S.home_hitokoto_size, S.home_hitokoto_color, S.home_hitokoto_font);
   const hitokotoContent = S.home_hide_hitokoto ? '' : '疏影横斜水清浅,暗香浮动月黄昏。';
   const shouldRenderStatsRow = !S.home_hide_stats || !S.home_hide_hitokoto;
-  const statsRowPyClass = shouldRenderStatsRow ? 'my-8' : 'hidden';
+  const statsRowPyClass = shouldRenderStatsRow ? 'my-4' : 'hidden';
   const statsRowHiddenClass = shouldRenderStatsRow ? '' : 'hidden';
 
   // === 13. 搜索引擎选项 ===
@@ -306,12 +305,25 @@ export async function onRequest(context) {
             </button>
             <div id="horizontalMoreDropdown" class="dropdown-menu hidden absolute mt-2 w-auto z-50"></div>
           </div>`;
+
+  const colPickerHtml = `
+      <div id="ioriColPicker" class="iori-col-picker flex flex-wrap items-center justify-center gap-1.5 mt-3 text-xs select-none" aria-label="每排书签数量">
+        <span class="iori-col-picker-label opacity-80">每排:</span>
+        <button type="button" data-cols="auto" class="iori-col-btn active">自动</button>
+        <button type="button" data-cols="6" class="iori-col-btn">6列</button>
+        <button type="button" data-cols="8" class="iori-col-btn">8列</button>
+        <button type="button" data-cols="10" class="iori-col-btn">10列</button>
+        <button type="button" data-cols="12" class="iori-col-btn">12列</button>
+        <button type="button" data-cols="14" class="iori-col-btn">14列</button>
+      </div>`;
+
   const horizontalCategoryNavHtml = `
       <div class="${horizontalCategoryNavShellClass}">
         <div id="horizontalCategoryNav" class="flex ${horizontalCategoryNavWrapClass} ${horizontalCategoryNavJustifyClass} items-center gap-3 ${horizontalCategoryNavOverflowClass} ${horizontalCategoryNavFlowClass} transition-all duration-300">
           ${horizontalCatalogMarkup}
           ${horizontalMoreHtml}
         </div>
+        ${colPickerHtml}
       </div>`;
 
   const verticalHeaderContent = `
@@ -324,14 +336,15 @@ export async function onRequest(context) {
           <svg xmlns="http://www.w3.org/2000/svg" class="home-search-icon h-6 w-6 absolute left-4 top-3.5 ${searchIconClass}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
         </div>
       </div>
+      ${colPickerHtml}
     </div>`;
 
   const horizontalHeaderContent = `
     <div class="max-w-5xl mx-auto text-center relative z-10 ${themeClass}">
       ${categoryPosition === 'top' ? `<div class="category-nav-top-wrap">${horizontalCategoryNavHtml}</div>` : ''}
       <div class="home-title-block max-w-4xl mx-auto mb-8">${horizontalTitleHtml}${horizontalSubtitleHtml}</div>
-      ${categoryPosition === 'above_search' ? `<div class="mb-8">${horizontalCategoryNavHtml}</div>` : ''}
-      <div class="home-search-shell relative max-w-xl mx-auto ${categoryPosition === 'below_search' ? 'mb-8' : ''}">
+      ${categoryPosition === 'above_search' ? `<div class="mb-6">${horizontalCategoryNavHtml}</div>` : ''}
+      <div class="home-search-shell relative max-w-xl mx-auto ${categoryPosition === 'below_search' ? 'mb-6' : ''}">
         ${searchEngineOptions}
         <div class="home-search-field relative">
           <input id="headerSearchInput" type="search" placeholder="搜索书签..." class="search-input-target w-full pl-12 pr-4 py-3.5 rounded-2xl transition-all shadow-lg outline-none focus:outline-none focus:ring-2 ${searchInputClass}" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="search" enterkeyhint="search" aria-label="搜索书签" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
@@ -389,14 +402,12 @@ export async function onRequest(context) {
   // === 16. 模板注入 ===
   let html = templateHtml;
 
-  // --- 收集所有 </head> 注入内容（合并为一次替换） ---
   let headInjections = '';
 
   if (S.home_hide_admin) {
     headInjections += '<style>a[href^="/admin"] { display: none !important; }</style>';
   }
 
-  // 背景层 HTML
   const safeWallpaperUrl = sanitizeUrl(resolvedWallpaperUrl);
   const defaultBgColor = '#fdf8f3';
   let bgLayerHtml = '';
@@ -411,7 +422,7 @@ export async function onRequest(context) {
     headInjections += `<link rel="preload" as="image" href="${safeWallpaperUrl}">\n`;
   }
 
-  // 全局滚动样式 + 扁平高透明卡片 + 随标签数量自适应宽度的容器（最窄保留原先 max-w-7xl，最宽左右留约 1cm）
+  // 去掉外层大格子 + 扁平方格高透明小格 + 窄两边留白 + 列数切换器样式
   headInjections += `<style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     #app-scroll { width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
@@ -419,87 +430,95 @@ export async function onRequest(context) {
     #fixed-background { transition: background-color 0.3s ease, filter 0.3s ease; }
     @supports (-webkit-touch-callout: none) { #fixed-background { height: -webkit-fill-available; } }
 
-    /* 外层容器默认铺满到安全边距，内部内容盒子按标签数量自适应伸展（最窄保留原先 1280px） */
     .home-stats-row,
     section:has(#sitesGrid) {
       max-width: 100% !important;
       width: 100% !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
     }
 
-    /* 扁平化 + 高透明外框 */
+    /* 彻底去掉包裹书签网格的大格子 */
     section:has(#sitesGrid) > div {
-      background-color: rgba(255, 255, 255, 0.22) !important;
-      border: 1px solid rgba(255, 255, 255, 0.28) !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      border: none !important;
       box-shadow: none !important;
-      backdrop-filter: blur(8px) !important;
-      -webkit-backdrop-filter: blur(8px) !important;
-    }
-    html.dark section:has(#sitesGrid) > div {
-      background-color: rgba(17, 24, 39, 0.24) !important;
-      border-color: rgba(255, 255, 255, 0.1) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border-radius: 0 !important;
+      padding: 4px 0 !important;
     }
 
-    /* 单个书签标签格：扁平化 + 高透明 */
+    /* 菜单/分类区里的每排数量切换胶囊 */
+    .iori-col-btn {
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: inherit;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .iori-col-btn:hover {
+      background: rgba(255, 255, 255, 0.28);
+    }
+    .iori-col-btn.active {
+      background: rgba(255, 255, 255, 0.38);
+      border-color: rgba(255, 255, 255, 0.65);
+      font-weight: 600;
+    }
+
+    /* 单个书签小格：扁平化方格 + 高透明度 */
     #sitesGrid .site-card,
     #sitesGrid > a,
     #sitesGrid > div {
-      background-color: rgba(255, 255, 255, 0.26) !important;
-      border: 1px solid rgba(255, 255, 255, 0.32) !important;
+      background-color: rgba(255, 255, 255, 0.14) !important;
+      border: 1px solid rgba(255, 255, 255, 0.22) !important;
+      border-radius: 6px !important;
       box-shadow: none !important;
-      backdrop-filter: blur(6px) !important;
-      -webkit-backdrop-filter: blur(6px) !important;
-      transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease !important;
+      backdrop-filter: blur(4px) !important;
+      -webkit-backdrop-filter: blur(4px) !important;
+      transition: background-color 0.15s ease, border-color 0.15s ease !important;
     }
     html.dark #sitesGrid .site-card,
     html.dark #sitesGrid > a,
     html.dark #sitesGrid > div {
-      background-color: rgba(24, 31, 46, 0.28) !important;
-      border-color: rgba(255, 255, 255, 0.12) !important;
+      background-color: rgba(17, 24, 39, 0.18) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
     }
     #sitesGrid .site-card:hover,
     #sitesGrid > a:hover,
     #sitesGrid > div:hover {
-      background-color: rgba(255, 255, 255, 0.44) !important;
-      border-color: rgba(255, 255, 255, 0.55) !important;
+      background-color: rgba(255, 255, 255, 0.28) !important;
+      border-color: rgba(255, 255, 255, 0.42) !important;
       box-shadow: none !important;
-      transform: translateY(-1px) !important;
+      transform: none !important;
     }
     html.dark #sitesGrid .site-card:hover,
     html.dark #sitesGrid > a:hover,
     html.dark #sitesGrid > div:hover {
-      background-color: rgba(31, 41, 55, 0.48) !important;
-      border-color: rgba(255, 255, 255, 0.24) !important;
+      background-color: rgba(31, 41, 55, 0.34) !important;
+      border-color: rgba(255, 255, 255, 0.22) !important;
     }
 
-    /* 移动端：安卓手机桌面图标风格（4 列紧凑图标 + 扁平高透明） */
+    /* 移动端：安卓手机桌面图标风格（4 列紧凑图标） */
     @media (max-width: 767px) {
-      .home-stats-row,
-      section:has(#sitesGrid) {
-        padding-left: 14px !important;
-        padding-right: 14px !important;
-      }
-      .home-stats-row > div,
-      section:has(#sitesGrid) > div {
-        width: 100% !important;
-        padding: 10px 6px !important;
-      }
       #sitesGrid {
         display: grid !important;
         width: 100% !important;
         grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-        gap: 10px 8px !important;
+        gap: 8px 6px !important;
         justify-items: center !important;
         align-items: start !important;
       }
       #sitesGrid > * {
         width: 100% !important;
-        max-width: 84px !important;
+        max-width: none !important;
         min-width: 0 !important;
         padding: 6px 2px !important;
-        border-radius: 12px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -507,7 +526,7 @@ export async function onRequest(context) {
       }
       #sitesGrid .site-title {
         font-size: 11px !important;
-        line-height: 1.25 !important;
+        line-height: 1.2 !important;
         margin-top: 4px !important;
         max-width: 100% !important;
         white-space: nowrap !important;
@@ -519,48 +538,35 @@ export async function onRequest(context) {
       }
     }
 
-    /* 桌面端：最窄保持原先 1280px（max-w-7xl），标签越多自动越宽直到左右各留约 1cm（36px） */
+    /* 桌面端：两边留窄空（18px），默认一排十几个密集排布，可由菜单列数按钮覆盖 */
     @media (min-width: 768px) {
       .home-stats-row,
       section:has(#sitesGrid) {
-        padding-left: 36px !important;
-        padding-right: 36px !important;
-      }
-      .home-stats-row > div,
-      section:has(#sitesGrid) > div {
-        width: fit-content !important;
-        min-width: min(100%, 1280px) !important;
-        max-width: 100% !important;
-      }
-      section:has(#sitesGrid) > div {
-        padding: 14px !important;
+        padding-left: 18px !important;
+        padding-right: 18px !important;
       }
       #sitesGrid {
         display: grid !important;
-        width: auto !important;
-        min-width: 100% !important;
-        grid-auto-flow: row !important;
-        grid-template-columns: repeat(auto-fit, minmax(105px, 128px)) !important;
-        justify-content: center !important;
-        gap: 10px !important;
+        width: 100% !important;
+        grid-template-columns: var(--iori-desktop-cols, repeat(auto-fill, minmax(105px, 1fr))) !important;
+        gap: 8px !important;
+        justify-items: stretch !important;
       }
       #sitesGrid > * {
         width: 100% !important;
         min-width: 0 !important;
         max-width: none !important;
-        padding: 10px 8px !important;
+        padding: 8px 6px !important;
       }
     }
   </style>`;
 
-  // CSS 变量
-  const cardRadius = normalizeCssPixelValue(S.layout_card_border_radius, 12);
+  const cardRadius = normalizeCssPixelValue(S.layout_card_border_radius, 6);
   const mobileCardRadius = normalizeCssPixelValue(S.mobile_layout_card_border_radius, cardRadius);
-  const frostedBlur = normalizeCssPixelValue(S.layout_frosted_glass_intensity, 15);
+  const frostedBlur = normalizeCssPixelValue(S.layout_frosted_glass_intensity, 6);
   const mobileFrostedBlur = normalizeCssPixelValue(S.mobile_layout_frosted_glass_intensity, frostedBlur);
-  headInjections += `<style>:root { --card-padding: 1.25rem; --card-radius: ${cardRadius}px; --frosted-glass-blur: ${frostedBlur}px; }@media (max-width: 767px) { :root { --card-radius: ${mobileCardRadius}px; --frosted-glass-blur: ${mobileFrostedBlur}px; } }</style>`;
+  headInjections += `<style>:root { --card-padding: 0.5rem; --card-radius: ${cardRadius}px; --frosted-glass-blur: ${frostedBlur}px; }@media (max-width: 767px) { :root { --card-radius: ${mobileCardRadius}px; --frosted-glass-blur: ${mobileFrostedBlur}px; } }</style>`;
 
-  // 自定义字体
   const usedFonts = new Set();
   if (!S.layout_hide_title && S.home_title_font) usedFonts.add(S.home_title_font);
   if (!S.layout_hide_subtitle && S.home_subtitle_font) usedFonts.add(S.home_subtitle_font);
@@ -598,7 +604,6 @@ export async function onRequest(context) {
   }
   if (fontLinksHtml) headInjections += fontLinksHtml;
 
-  // 卡片自定义字体 CSS
   let customCardCss = '';
   const desktopCardTitleStyle = getStyleStr(S.card_title_size, S.card_title_color, S.card_title_font).replace('style="', '').replace('"', '');
   const mobileCardTitleStyle = getStyleStr(S.mobile_card_title_size, S.mobile_card_title_color, S.mobile_card_title_font).replace('style="', '').replace('"', '');
@@ -618,7 +623,6 @@ export async function onRequest(context) {
   }
   if (customCardCss) headInjections += `<style>${customCardCss}</style>`;
 
-  // 全局站点卡片视图模型与布局配置
   const cardHydrationState = buildCardHydrationState(allSites, S);
   const safeSitesJson = JSON.stringify(cardHydrationState.cards).replace(/</g, '\\u003c');
   const safeCardConfigsJson = JSON.stringify(cardHydrationState.configs).replace(/</g, '\\u003c');
@@ -645,7 +649,51 @@ export async function onRequest(context) {
     '<body class="bg-secondary-50 font-sans text-gray-800">',
     `<body class="bg-secondary-50 dark:bg-gray-900 font-sans text-gray-800 dark:text-gray-100 relative ${isCustomWallpaper ? 'custom-wallpaper' : ''} ${pageStyleClasses}">${bgLayerHtml}<div id="app-scroll">`
   );
-  html = html.replace('</body>', '</div></body>');
+
+  // 菜单“每排多少列”交互脚本（存入 localStorage，每次点击或分类刷新自动应用）
+  const colPickerScript = `<script>
+    (function () {
+      const STORAGE_KEY = 'iori_desktop_cols_v1';
+      function applyCols(cols) {
+        const val = String(cols || 'auto');
+        try { localStorage.setItem(STORAGE_KEY, val); } catch (e) {}
+        document.querySelectorAll('.iori-col-btn').forEach((btn) => {
+          btn.classList.toggle('active', btn.getAttribute('data-cols') === val);
+        });
+        const grid = document.getElementById('sitesGrid');
+        if (!grid) return;
+        if (val === 'auto') {
+          grid.style.removeProperty('--iori-desktop-cols');
+        } else {
+          const num = parseInt(val, 10);
+          if (num >= 2 && num <= 20) {
+            grid.style.setProperty('--iori-desktop-cols', 'repeat(' + num + ', minmax(0, 1fr))');
+          }
+        }
+      }
+      document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.iori-col-btn');
+        if (!btn) return;
+        applyCols(btn.getAttribute('data-cols'));
+      });
+      function initCols() {
+        let saved = 'auto';
+        try { saved = localStorage.getItem(STORAGE_KEY) || 'auto'; } catch (e) {}
+        applyCols(saved);
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCols);
+      } else {
+        initCols();
+      }
+      const grid = document.getElementById('sitesGrid');
+      if (grid && typeof MutationObserver !== 'undefined') {
+        new MutationObserver(initCols).observe(grid, { childList: true });
+      }
+    })();
+  </script>`;
+
+  html = html.replace('</body>', `${colPickerScript}</div></body>`);
 
   const mainJsMarker = '<script src="/js/main.js';
   if (!html.includes(mainJsMarker)) {
@@ -694,7 +742,6 @@ export async function onRequest(context) {
   html = html.replace(/\{\{(\w+)\}\}/g, (_, key) => replacements[key] ?? '');
   html = html.replace('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6', gridClass);
 
-  // 放宽模板中包裹主内容区/书签区的最大宽度容器，交由上方 CSS 控制自适应伸展
   html = html.replace(
     /class="([^"]*?)max-w-(?:4xl|5xl|6xl|7xl)([^"]*?)"/g,
     (_, before, after) => `class="${before}max-w-full${after}"`
