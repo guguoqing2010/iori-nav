@@ -53,8 +53,6 @@ export async function onRequest(context) {
   const isHomePage = url.pathname === '/' && !url.search;
   const cacheScope = isAuthenticated ? 'private' : 'public';
   const cookies = request.headers.get('Cookie') || '';
-  // 旧版本用这两个 cookie 让前端触发一次缓存刷新，现在没有任何写入路径了；
-  // 保留读取分支只为清掉老浏览器里残留的值，可以随下次大版本一起移除。
   const hasLegacyStaleCookie = cookies.includes('iori_cache_stale=1');
   const hasPublicStaleCookie = hasLegacyStaleCookie || cookies.includes('iori_cache_public_stale=1');
   const hasPrivateStaleCookie = hasLegacyStaleCookie || cookies.includes('iori_cache_private_stale=1');
@@ -75,8 +73,6 @@ export async function onRequest(context) {
       shouldClearCookie = true;
     }
 
-    // generation 来自 D1，必须在 schema 就绪后读取；KV 只保存按版本隔离的 HTML。
-    // 不把 generation 放进 KV，否则冷缓存的负缓存会阻止立即读回新 token。
     let cachedHtml = null;
     try {
       [cacheDirtyValue, cacheGeneration] = await Promise.all([
@@ -87,7 +83,6 @@ export async function onRequest(context) {
         cachedHtml = await env.NAV_AUTH.get(getHomeCacheKey(cacheScope, cacheGeneration));
       }
     } catch (e) {
-      // 任一读失败都走 MISS 且跳过回填，避免把未知版本或未知 dirty 状态当作 HIT。
       console.warn('Failed to read home cache:', e);
       cachedHtml = null;
       cacheDirtyValue = null;
@@ -121,11 +116,9 @@ export async function onRequest(context) {
 
   const settingsKeys = getSettingsKeys();
   const settingsPlaceholders = settingsKeys.map(() => '?').join(',');
-  // sort_order 仅用于 ORDER BY，不参与 SELECT（SQLite 允许）；前端不使用该字段
   const sitesQuery = `SELECT id, name, url, logo, desc, catelog_id, catelog_name
                       FROM sites WHERE (is_private = 0 OR ? = 1) ORDER BY sort_order ASC, create_time DESC`;
 
-  // Settings 缓存：优先从 KV 读取，减少数据库查询
   const settingsCacheKey = 'settings_cache';
   const fetchSettings = async () => {
     try {
@@ -135,8 +128,6 @@ export async function onRequest(context) {
       console.warn('Settings cache read failed:', e);
     }
     const result = await env.NAV_DB.prepare(`SELECT key, value FROM settings WHERE key IN (${settingsPlaceholders})`).bind(...settingsKeys).all();
-    // 异步写入缓存，24h TTL；POST settings 时会主动清除（见 api/settings.js），
-    // 较长 TTL 减少 D1 兜底查询次数
     if (result.results && env.NAV_AUTH) {
       context.waitUntil(env.NAV_AUTH.put(settingsCacheKey, JSON.stringify(result.results), { expirationTtl: 86400 }));
     }
@@ -200,8 +191,6 @@ export async function onRequest(context) {
   const requestedCatalogValue = (url.searchParams.get('catalog') || '').trim();
   let requestedCatalogId = resolveCatalogId(requestedCatalogValue);
 
-  // 共享首页缓存仅基于稳定的默认分类渲染，避免用户的 iori_last_category
-  // 影响公共 KV HTML。记住上次分类的恢复逻辑仅在前端执行。
   if (!requestedCatalogValue) {
     const defaultCat = (S.home_default_category || '').trim();
     requestedCatalogId = resolveCatalogId(defaultCat, { allowName: true });
@@ -222,7 +211,6 @@ export async function onRequest(context) {
     : allSites;
 
   // === 7. 壁纸处理 ===
-  // 自定义壁纸优先；留空时使用当前桌面卡片风格的默认壁纸
   const resolvedWallpaperUrl = resolveWallpaperUrl(S.layout_custom_wallpaper, S.layout_card_style);
   const isCustomWallpaper = Boolean(resolvedWallpaperUrl);
   const themeClass = isCustomWallpaper ? 'custom-wallpaper' : '';
@@ -247,18 +235,18 @@ export async function onRequest(context) {
     ? renderSiteCards(sites, S)
     : renderEmptyState(categories.length, S.home_hide_admin);
 
-  // === 11. 计算 Grid 列数（向屏幕两侧扩展、单行排更多卡片） ===
+  // === 11. 计算 Grid 列数 ===
   const getMobileGridClass = (cols) => {
     if (cols === '1') return 'grid-cols-1';
     if (cols === '3') return 'grid-cols-3';
-    return 'grid-cols-2';
+    return 'grid-cols-4';
   };
   const getDesktopGridClass = (cols) => {
-    if (cols === '5') return 'md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8';
-    if (cols === '6') return 'md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-9';
-    if (cols === '7') return 'md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10';
-    if (cols === '8') return 'md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 2xl:grid-cols-10';
-    return 'md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
+    if (cols === '5') return 'md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12';
+    if (cols === '6') return 'md:grid-cols-7 lg:grid-cols-9 xl:grid-cols-11 2xl:grid-cols-12';
+    if (cols === '7') return 'md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-14';
+    if (cols === '8') return 'md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 2xl:grid-cols-14';
+    return 'md:grid-cols-7 lg:grid-cols-9 xl:grid-cols-11';
   };
   const getCardStyleGridClass = (style, prefix) => {
     if (style === 'style3') return `${prefix}-card-style3`;
@@ -266,7 +254,7 @@ export async function onRequest(context) {
   };
   const mobileCardStyleClass = getCardStyleGridClass(S.mobile_layout_card_style, 'mobile');
   const desktopCardStyleClass = getCardStyleGridClass(S.layout_card_style, 'desktop');
-  let gridClass = `grid w-full ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)} ${mobileCardStyleClass} ${desktopCardStyleClass} gap-3 sm:gap-4 justify-items-stretch`;
+  let gridClass = `grid w-full ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)} ${mobileCardStyleClass} ${desktopCardStyleClass} gap-2.5 sm:gap-3 justify-items-stretch`;
 
   // === 12. 计算文本和统计信息 ===
   const headingPlainText = currentCatalogName ? `${currentCatalogName} · ${sites.length} 个书签` : `全部收藏 · ${sites.length} 个书签`;
@@ -301,19 +289,14 @@ export async function onRequest(context) {
   const safeSiteDesc = escapeHTML(siteDescription);
   const horizontalTitleHtml = S.layout_hide_title ? '' : `<h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-3 ${titleColorClass}" ${titleStyle}>${safeSiteName}</h1>`;
   const horizontalSubtitleHtml = S.layout_hide_subtitle ? '' : `<p class="${subTextColorClass} opacity-90 text-sm md:text-base" ${subtitleStyle}>${safeSiteDesc}</p>`;
-  // S.home_category_position 已由 parseSettings 归一化过（含 above_description → top 的遗留映射，
-  // 以及缺失值按 layout_menu_layout 回填），这里直接使用，不再维护第二份同样的规则。
   const categoryPosition = S.home_category_position;
   const isHorizontalCategoryLayout = categoryPosition !== 'left';
   const categoryFlow = S.home_category_flow === 'multi_line' ? 'multi_line' : 'single_line';
-  // 分类行宽度 max-w-5xl（64rem），按钮 min-width: 4em+2rem，单行约 8 个
   const horizontalCategoryNavShellClass = categoryPosition === 'top'
     ? 'horizontal-category-nav-shell is-top relative mx-auto'
     : 'horizontal-category-nav-shell relative mx-auto';
   const horizontalCategoryNavJustifyClass = categoryFlow === 'multi_line' ? 'justify-start' : 'justify-center';
-  // 单行：nowrap + 宽度折叠（与预览一致）；多行：wrap 且无 more
   const horizontalCategoryNavWrapClass = categoryFlow === 'multi_line' ? 'flex-wrap' : 'flex-nowrap';
-  // 单行也用 overflow-visible：overflow-hidden 会裁切多级下拉与「更多」弹出层
   const horizontalCategoryNavOverflowClass = 'overflow-visible';
   const horizontalCategoryNavFlowClass = categoryFlow === 'multi_line' ? 'is-multi-line' : 'is-single-line';
   const horizontalMoreHtml = categoryFlow === 'multi_line' ? '' : `
@@ -409,7 +392,6 @@ export async function onRequest(context) {
   // --- 收集所有 </head> 注入内容（合并为一次替换） ---
   let headInjections = '';
 
-  // 注入隐藏图标的 CSS
   if (S.home_hide_admin) {
     headInjections += '<style>a[href^="/admin"] { display: none !important; }</style>';
   }
@@ -425,24 +407,148 @@ export async function onRequest(context) {
     bgLayerHtml = `<div id="fixed-background" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -9999; pointer-events: none; background-color: ${defaultBgColor};"></div>`;
   }
 
-  // 壁纸预加载
   if (safeWallpaperUrl) {
     headInjections += `<link rel="preload" as="image" href="${safeWallpaperUrl}">\n`;
   }
 
-  // 全局滚动样式 + 书签区域向屏幕两侧加宽样式
+  // 全局滚动样式 + 扁平高透明卡片 + 随标签数量自适应宽度的容器（最窄保留原先 max-w-7xl，最宽左右留约 1cm）
   headInjections += `<style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     #app-scroll { width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
     body { background-color: transparent !important; }
     #fixed-background { transition: background-color 0.3s ease, filter 0.3s ease; }
     @supports (-webkit-touch-callout: none) { #fixed-background { height: -webkit-fill-available; } }
-    @media (min-width: 768px) {
-      main[class*="max-w-"],
-      #app-scroll > div[class*="max-w-"],
-      #app-scroll main > div[class*="max-w-"] {
-        max-width: 96% !important;
+
+    /* 外层容器默认铺满到安全边距，内部内容盒子按标签数量自适应伸展（最窄保留原先 1280px） */
+    .home-stats-row,
+    section:has(#sitesGrid) {
+      max-width: 100% !important;
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+    }
+
+    /* 扁平化 + 高透明外框 */
+    section:has(#sitesGrid) > div {
+      background-color: rgba(255, 255, 255, 0.22) !important;
+      border: 1px solid rgba(255, 255, 255, 0.28) !important;
+      box-shadow: none !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+    html.dark section:has(#sitesGrid) > div {
+      background-color: rgba(17, 24, 39, 0.24) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* 单个书签标签格：扁平化 + 高透明 */
+    #sitesGrid .site-card,
+    #sitesGrid > a,
+    #sitesGrid > div {
+      background-color: rgba(255, 255, 255, 0.26) !important;
+      border: 1px solid rgba(255, 255, 255, 0.32) !important;
+      box-shadow: none !important;
+      backdrop-filter: blur(6px) !important;
+      -webkit-backdrop-filter: blur(6px) !important;
+      transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease !important;
+    }
+    html.dark #sitesGrid .site-card,
+    html.dark #sitesGrid > a,
+    html.dark #sitesGrid > div {
+      background-color: rgba(24, 31, 46, 0.28) !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+    #sitesGrid .site-card:hover,
+    #sitesGrid > a:hover,
+    #sitesGrid > div:hover {
+      background-color: rgba(255, 255, 255, 0.44) !important;
+      border-color: rgba(255, 255, 255, 0.55) !important;
+      box-shadow: none !important;
+      transform: translateY(-1px) !important;
+    }
+    html.dark #sitesGrid .site-card:hover,
+    html.dark #sitesGrid > a:hover,
+    html.dark #sitesGrid > div:hover {
+      background-color: rgba(31, 41, 55, 0.48) !important;
+      border-color: rgba(255, 255, 255, 0.24) !important;
+    }
+
+    /* 移动端：安卓手机桌面图标风格（4 列紧凑图标 + 扁平高透明） */
+    @media (max-width: 767px) {
+      .home-stats-row,
+      section:has(#sitesGrid) {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+      }
+      .home-stats-row > div,
+      section:has(#sitesGrid) > div {
         width: 100% !important;
+        padding: 10px 6px !important;
+      }
+      #sitesGrid {
+        display: grid !important;
+        width: 100% !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 10px 8px !important;
+        justify-items: center !important;
+        align-items: start !important;
+      }
+      #sitesGrid > * {
+        width: 100% !important;
+        max-width: 84px !important;
+        min-width: 0 !important;
+        padding: 6px 2px !important;
+        border-radius: 12px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+      }
+      #sitesGrid .site-title {
+        font-size: 11px !important;
+        line-height: 1.25 !important;
+        margin-top: 4px !important;
+        max-width: 100% !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      #sitesGrid p {
+        display: none !important;
+      }
+    }
+
+    /* 桌面端：最窄保持原先 1280px（max-w-7xl），标签越多自动越宽直到左右各留约 1cm（36px） */
+    @media (min-width: 768px) {
+      .home-stats-row,
+      section:has(#sitesGrid) {
+        padding-left: 36px !important;
+        padding-right: 36px !important;
+      }
+      .home-stats-row > div,
+      section:has(#sitesGrid) > div {
+        width: fit-content !important;
+        min-width: min(100%, 1280px) !important;
+        max-width: 100% !important;
+      }
+      section:has(#sitesGrid) > div {
+        padding: 14px !important;
+      }
+      #sitesGrid {
+        display: grid !important;
+        width: auto !important;
+        min-width: 100% !important;
+        grid-auto-flow: row !important;
+        grid-template-columns: repeat(auto-fit, minmax(105px, 128px)) !important;
+        justify-content: center !important;
+        gap: 10px !important;
+      }
+      #sitesGrid > * {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        padding: 10px 8px !important;
       }
     }
   </style>`;
@@ -475,7 +581,6 @@ export async function onRequest(context) {
   });
   const safeCustomFontUrl = sanitizeUrl(S.home_custom_font_url);
   if (safeCustomFontUrl) fontLinksHtml += `<link rel="stylesheet" href="${safeCustomFontUrl}">`;
-  // 字体域名预连接（减少 DNS + TLS 延迟）
   if (needsFontPreconnect) headInjections += `<link rel="preconnect" href="https://fonts.loli.net" crossorigin>`;
   if (safeCustomFontUrl) {
     try {
@@ -483,9 +588,8 @@ export async function onRequest(context) {
       if (customFontOrigin !== 'https://fonts.loli.net') {
         headInjections += `<link rel="preconnect" href="${escapeHTML(customFontOrigin)}" crossorigin>`;
       }
-    } catch { /* sanitizeUrl 已校验，这里不会触达 */ }
+    } catch { /* sanitizeUrl 已校验 */ }
   }
-  // Logo 图标服务域名预连接（首屏 logo 多数来自 ICON_API 域，提前握手减少 LCP）
   if (env.ICON_API) {
     try {
       const iconOrigin = new URL(env.ICON_API).origin;
@@ -514,10 +618,9 @@ export async function onRequest(context) {
   }
   if (customCardCss) headInjections += `<style>${customCardCss}</style>`;
 
-  // 全局站点卡片视图模型与布局配置：直接序列化后注入到 main.js 之前
+  // 全局站点卡片视图模型与布局配置
   const cardHydrationState = buildCardHydrationState(allSites, S);
   const safeSitesJson = JSON.stringify(cardHydrationState.cards).replace(/</g, '\\u003c');
-  // 只注入设备维度的 configs；重复的 config 字段已移除。
   const safeCardConfigsJson = JSON.stringify(cardHydrationState.configs).replace(/</g, '\\u003c');
   const safeLayoutConfigJson = JSON.stringify({
     hideDesc: S.layout_hide_desc,
@@ -528,14 +631,11 @@ export async function onRequest(context) {
     cardAnimation: S.layout_card_animation,
     enableFrostedGlass: S.layout_enable_frosted_glass,
     rememberLastCategory: S.home_remember_last_category,
-    // 当前 SSR 已渲染的分类（用于前端 Auto-restore 判断是否可跳过重绘）
     ssrCatalogId: catalogExists ? requestedCatalogId : 'all',
   }).replace(/</g, '\\u003c');
 
-  // --- 一次性替换 </head> ---
   html = html.replace('</head>', headInjections + '</head>');
 
-  // 替换 body 标签 + 滚动容器
   const pageStyleClasses = [
     S.layout_card_style === 'style3' ? 'desktop-page-style3' : '',
     S.mobile_layout_card_style === 'style3' ? 'mobile-page-style3' : '',
@@ -547,9 +647,6 @@ export async function onRequest(context) {
   );
   html = html.replace('</body>', '</div></body>');
 
-  // 将 IORI_SITES / IORI_LAYOUT_CONFIG 数据注入到 main.js 之前，使其在 body 底部而非 <head>，加快 FCP
-  // - 字面量匹配：避免未来模板给 <script> 加 defer/type 等属性时正则静默失配
-  // - 函数形式 replacement：规避用户数据中可能含 $&、$1 等被当作 back-reference
   const mainJsMarker = '<script src="/js/main.js';
   if (!html.includes(mainJsMarker)) {
     console.error('Card hydration injection skipped: main.js marker not found in template');
@@ -560,7 +657,6 @@ export async function onRequest(context) {
     );
   }
 
-  // 替换所有模板占位符（单次正则匹配 + 映射表）
   const canonicalUrl = `${url.origin}/`;
   const ogImageUrl = `${url.origin}/favicon.svg`;
   const replacements = {
@@ -598,13 +694,12 @@ export async function onRequest(context) {
   html = html.replace(/\{\{(\w+)\}\}/g, (_, key) => replacements[key] ?? '');
   html = html.replace('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6', gridClass);
 
-  // 放宽模板中包裹主内容区/书签区的最大宽度容器，减少屏幕两侧留白
+  // 放宽模板中包裹主内容区/书签区的最大宽度容器，交由上方 CSS 控制自适应伸展
   html = html.replace(
     /class="([^"]*?)max-w-(?:4xl|5xl|6xl|7xl)([^"]*?)"/g,
-    (_, before, after) => `class="${before}max-w-[96%] 2xl:max-w-[1800px]${after}"`
+    (_, before, after) => `class="${before}max-w-full${after}"`
   );
 
-  // 压缩标签间空白，减小 HTML 体积（项目无 <pre>/<textarea>，安全）
   html = html.replace(/>\s+</g, '><');
 
   // === 17. 返回响应 ===
@@ -626,7 +721,6 @@ export async function onRequest(context) {
       try {
         const wrote = await writeHomeCacheIfUnchanged(env, cacheScope, html, cacheGeneration);
         if (wrote && cacheDirty) {
-          // 条件清除：渲染期间若有新写入刷新了标记，保留它让下一次请求重新渲染。
           await clearHomeCacheDirtyIfValue(env, cacheScope, cacheDirtyValue);
         }
       } catch (e) {
