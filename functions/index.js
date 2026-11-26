@@ -247,17 +247,18 @@ export async function onRequest(context) {
     ? renderSiteCards(sites, S)
     : renderEmptyState(categories.length, S.home_hide_admin);
 
-  // === 11. 计算 Grid 列数 ===
+  // === 11. 计算 Grid 列数（向屏幕两侧扩展、单行排更多卡片） ===
   const getMobileGridClass = (cols) => {
     if (cols === '1') return 'grid-cols-1';
     if (cols === '3') return 'grid-cols-3';
     return 'grid-cols-2';
   };
   const getDesktopGridClass = (cols) => {
-    if (cols === '5') return 'md:grid-cols-3 lg:grid-cols-5';
-    if (cols === '6') return 'md:grid-cols-3 lg:grid-cols-5 min-[1200px]:grid-cols-6';
-    if (cols === '7') return 'md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7';
-    return 'md:grid-cols-3 lg:grid-cols-4';
+    if (cols === '5') return 'md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8';
+    if (cols === '6') return 'md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-9';
+    if (cols === '7') return 'md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 2xl:grid-cols-10';
+    if (cols === '8') return 'md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 2xl:grid-cols-10';
+    return 'md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
   };
   const getCardStyleGridClass = (style, prefix) => {
     if (style === 'style3') return `${prefix}-card-style3`;
@@ -265,7 +266,7 @@ export async function onRequest(context) {
   };
   const mobileCardStyleClass = getCardStyleGridClass(S.mobile_layout_card_style, 'mobile');
   const desktopCardStyleClass = getCardStyleGridClass(S.layout_card_style, 'desktop');
-  let gridClass = `grid ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)} ${mobileCardStyleClass} ${desktopCardStyleClass} gap-3 sm:gap-6 justify-items-center`;
+  let gridClass = `grid w-full ${getMobileGridClass(S.mobile_layout_grid_cols)} ${getDesktopGridClass(S.layout_grid_cols)} ${mobileCardStyleClass} ${desktopCardStyleClass} gap-3 sm:gap-4 justify-items-stretch`;
 
   // === 12. 计算文本和统计信息 ===
   const headingPlainText = currentCatalogName ? `${currentCatalogName} · ${sites.length} 个书签` : `全部收藏 · ${sites.length} 个书签`;
@@ -429,13 +430,21 @@ export async function onRequest(context) {
     headInjections += `<link rel="preload" as="image" href="${safeWallpaperUrl}">\n`;
   }
 
-  // 全局滚动样式
+  // 全局滚动样式 + 书签区域向屏幕两侧加宽样式
   headInjections += `<style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     #app-scroll { width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
     body { background-color: transparent !important; }
     #fixed-background { transition: background-color 0.3s ease, filter 0.3s ease; }
     @supports (-webkit-touch-callout: none) { #fixed-background { height: -webkit-fill-available; } }
+    @media (min-width: 768px) {
+      main[class*="max-w-"],
+      #app-scroll > div[class*="max-w-"],
+      #app-scroll main > div[class*="max-w-"] {
+        max-width: 96% !important;
+        width: 100% !important;
+      }
+    }
   </style>`;
 
   // CSS 变量
@@ -588,6 +597,12 @@ export async function onRequest(context) {
   };
   html = html.replace(/\{\{(\w+)\}\}/g, (_, key) => replacements[key] ?? '');
   html = html.replace('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6', gridClass);
+
+  // 放宽模板中包裹主内容区/书签区的最大宽度容器，减少屏幕两侧留白
+  html = html.replace(
+    /class="([^"]*?)max-w-(?:4xl|5xl|6xl|7xl)([^"]*?)"/g,
+    (_, before, after) => `class="${before}max-w-[96%] 2xl:max-w-[1800px]${after}"`
+  );
 
   // 压缩标签间空白，减小 HTML 体积（项目无 <pre>/<textarea>，安全）
   html = html.replace(/>\s+</g, '><');
